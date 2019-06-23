@@ -1,3 +1,10 @@
 Class.add('Directive',Directive);
 Class.add('Filter',Filter);
 Class.add('Expression',Expression);
+Class.add('Element',Element);
+Class.add('Module',Module);
+Class.add('Model',Model);
+Class.add('FilterFactory',FilterFactory);
+Class.add('DirectiveFactory',DirectiveFactory);
+Class.add('ExpressionFactory',ExpressionFactory);
+Class.add('Route',Route);

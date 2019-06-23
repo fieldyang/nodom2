@@ -1,3 +1,6 @@
+/**
+ * class类，用于模拟java反射，服务于反序列化
+ */
 class Class{
 	/**
 	 * 添加class
