@@ -1,0 +1,57 @@
+每个module都有modelFactory，modelFactory用于管理定义的model，以modelId标识
+model和view不再强关联，view指向的model用modelId来指向
+data保持干净，不再增加额外属性
+把附加属性增加到model中
+
+Object 可以用Proxy进行处理，给Proxy增加set和get方法进行监听；
+数据get时，如果是对象，直接返回代理，怎么做？
+用defineProperty 设置get方法？
+Array 无法通过Proxy监听其相应方法，怎么弄呢？给array 模型增加相应的push、pop等方法的监听
+想都通过Proxy来做监听，看来是不行的
+尝试了Proxy来做get和set方法监听，无法实现，还是回到老路，
+model增加fields对象，存放非对象类型值的属性和值。
+
+表达式：一个表达式串可能会形成表达式组，这个通常在textContent里面，比如hello {{username}},welcome to {{cityname}}，在这个里面最终要显示的是 hello yang,welcome to mianyang，则构造的时候就形成一个数组['hello ',exprid1,'welcome to ',exprid2]。
+所以在编译的时候，需要形成一个字符串和数字组合的数组，其中数字表示为表达式id。表达式统一放在expressionFactory里面。
+
+指令：指令在编译时，会进行初始化处理，处理完后，在虚拟dom中，以id方式存在，该属性值为整型，而其它属性都为字符串。
+
+虚拟dom编译好之后，作为原始虚拟dom保存。
+每次渲染，都拿原始虚拟dom来渲染，渲染完后，替换旧的（非原始）虚拟dom（首次没有）。
+渲染到真实dom之前，需要与旧的虚拟dom进行比较，比较完后，把修改的虚拟dom更新到真实dom。
+
+
+expression和directive如果放到工厂里面，则在处理的时候，需要从工厂读取，对于某些指令而言，稍显困难，现在直接以实例存放在对应位置
+
+序列化和反序列化的时候需要存储对象的类型，否则无法进一步操作
+
+dom比较：如果不同，是否需要比较兄弟节点，这样可以解决插入或删除节点问题导致的新建节点开销，但是可能兄弟节点比较多，怎么处理。
+比较的话，把json对象转string，是不是比较快。
+
+
+事件处理
+event实例化后不绑定到对象，在首次渲染时，再进行实际绑定，事件绑定后不再修改
+
+modelid 
+采用自增方式产生，每一个model都对应唯一id
+
+dom key生成策略
+编译时生成key，所有节点的key以elementid自增，repeat生成的key以elementkey + '_' + modelid组合，如123_1
+
+数组model需要包括 插入数组inserts:[{index:,data:},...] -1表示插入到0前,删除数组deletes:[index1,index2,...]
+数据不支持set方法进行新数据项增加
+首次渲染时设置model绑定，即给element绑定modelid，可能是数组
+
+repeat 指令插入数据的$index问题
+repeat 指令导致子节点key改变问题
+
+表达式优化方案
+vdom渲染时，对expressionid进行标记，渲染完后，统一进行表达式计算，策略为把所有的表达式计算放在一起进行eval
+clone节点时，需要对表达式进行克隆
+表达式设置嵌套，主要解决表达式中有过滤器的情况，过滤器也产生一个新的表达式 
+表达式内部含有表达式的问题
+表达式还是直接eval，1000个节点也就100ms，修改在50ms左右
+
+模块生命周期，共5个状态  uncreate(未创建)、uninit(未初始化)、unactive(未激活，不在当前页面)、active(激活，在当前页面)、dead(死亡)
+
+路由加载模块问题，存在多个模块之间的同步问题

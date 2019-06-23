@@ -1,0 +1,2 @@
+class ModelFactory extends Factory{}
+

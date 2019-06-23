@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+	<title>Document</title>
+	<script src='../../js/bin/nodom-2.0.js'></script>
+	
+	<style>
+		.cls1{
+			color:red;
+		}
+		.cls2{
+			font-size:20pt;
+		}
+	</style>
+</head>
+<body>
+	<div>
+		<button e-click='change'>change</button>
+		<button e-click='change1'>change1</button>
+		<div>
+			<div> 姓名:{{name}}</div>
+			<div> 性别:{{sexy}}</div>
+			<div> 已婚:{{married}}</div>
+			<div> 学历:{{edu}}</div>
+		</div>
+		<div>
+			<div>姓名：<input type='text' x-field='name' value='{{name}}'></div>
+			<div>性别:<input type='radio' x-field='sexy' value='M'/>男 <input x-field='sexy' type='radio' value='F'/>女</div>
+			<div>已婚<input type='checkbox' x-field='married' value='{{married}}' yes-value='1' no-value='0'>是</div>
+			<div>学历：<select x-field='edu'><option x-repeat='edus' value='{{eduId}}'>{{eduName}}</option></select></div>
+		</div>
+	</div>
+</body>
+	<script>
+		let mod = new Module({
+			el:'div',
+			root:true,
+			data:{
+				name:'yanglei',
+				sexy:'M',
+				married:1,
+				edu:2,
+				edus:[
+					{eduId:1,eduName:'高中'},
+					{eduId:2,eduName:'本科'},
+					{eduId:3,eduName:'硕士研究生'},
+					{eduId:4,eduName:'博士研究生'}
+				]
+			},
+			methods:{
+				select:function(arr){
+					return [arr[1],arr[2]];
+				},
+				changeId:function(id){
+					return id+1;
+				},
+				clickDiv:function(e,module,view){
+					console.log(this,e,module,view);
+				},
+				clickPar:function(){
+					console.log(this);
+				},
+				clickItem:function(e){
+					console.log(this,e);
+				},
+				change:function(e,module){
+					module.model.data.age = 10;
+					module.model.data.show = true;
+					// module.model.data.rows.splice(1,1,
+					// 	{name:'dddd',id:5,price:400}
+					// )
+
+					module.model.data.rows[1].price = 1000
+				},
+				change1:function(e,module){
+					module.model.data.rows[2].price=1000;
+				}
+			}
+		});
+		console.log(mod.modelFactory);
+		
+	</script>
+</html>
