@@ -132,7 +132,7 @@ class Event{
                 if(me.nopopo){
                     e.stopPropagation();
                 }
-                nodom.apply(foo,model,[e,me.el,me.module,me.virtualDom]);
+                nodom.apply(foo,model,[e,me.module,me.el,me.virtualDom]);
                 //事件只执行一次，则删除handler
                 if(me.once){  
                     delete me.handler;

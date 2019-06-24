@@ -650,7 +650,7 @@ DirectiveManager.addType('route',{
         //添加click事件
 		let method = '$nodomGenMethod' + nodom.genId();
 		module.methodFactory.add(method,
-            (e,view,module,dom)=>{
+            (e,module,view,dom)=>{
             	let path = dom.props['path'];
             	if(dom.props.hasOwnProperty('active')){  //有active属性，交给路由激活
             		module.routerWantActive = dom.key;

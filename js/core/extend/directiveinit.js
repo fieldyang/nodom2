@@ -337,7 +337,7 @@ DirectiveManager.addType('field',{
         //增加自定义方法
         let method = '$nodomGenMethod' + nodom.genId();
         module.methodFactory.add(method,
-            function(e,view,module,dom){
+            function(e,module,view,dom){
                 let type = dom.props['type'];
                 let model = module.modelFactory.get(dom.modelId);
                 let field = dom.getDirective('field').value;

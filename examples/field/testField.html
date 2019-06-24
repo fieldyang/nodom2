@@ -50,36 +50,14 @@
 				]
 			},
 			methods:{
-				select:function(arr){
-					return [arr[1],arr[2]];
-				},
-				changeId:function(id){
-					return id+1;
-				},
-				clickDiv:function(e,module,view){
-					console.log(this,e,module,view);
-				},
-				clickPar:function(){
-					console.log(this);
-				},
-				clickItem:function(e){
-					console.log(this,e);
-				},
 				change:function(e,module){
-					module.model.data.age = 10;
-					module.model.data.show = true;
-					// module.model.data.rows.splice(1,1,
-					// 	{name:'dddd',id:5,price:400}
-					// )
-
-					module.model.data.rows[1].price = 1000
+					this.data.married = 0;
 				},
 				change1:function(e,module){
-					module.model.data.rows[2].price=1000;
+					this.data.name='yanglei123';
 				}
 			}
 		});
-		console.log(mod.modelFactory);
 		
 	</script>
 </html>

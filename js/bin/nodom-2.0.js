@@ -2562,7 +2562,7 @@ class Event{
                 if(me.nopopo){
                     e.stopPropagation();
                 }
-                nodom.apply(foo,model,[e,me.el,me.module,me.virtualDom]);
+                nodom.apply(foo,model,[e,me.module,me.el,me.virtualDom]);
                 //事件只执行一次，则删除handler
                 if(me.once){  
                     delete me.handler;
@@ -4467,7 +4467,7 @@ DirectiveManager.addType('route',{
         //添加click事件
 		let method = '$nodomGenMethod' + nodom.genId();
 		module.methodFactory.add(method,
-            (e,view,module,dom)=>{
+            (e,module,view,dom)=>{
             	let path = dom.props['path'];
             	if(dom.props.hasOwnProperty('active')){  //有active属性，交给路由激活
             		module.routerWantActive = dom.key;
@@ -4990,7 +4990,7 @@ DirectiveManager.addType('field',{
         //增加自定义方法
         let method = '$nodomGenMethod' + nodom.genId();
         module.methodFactory.add(method,
-            function(e,view,module,dom){
+            function(e,module,view,dom){
                 let type = dom.props['type'];
                 let model = module.modelFactory.get(dom.modelId);
                 let field = dom.getDirective('field').value;
@@ -5493,7 +5493,6 @@ Class.add('Expression',Expression);
 Class.add('Element',Element);
 Class.add('Module',Module);
 Class.add('Model',Model);
-Class.add('FilterFactory',FilterFactory);
 Class.add('DirectiveFactory',DirectiveFactory);
 Class.add('ExpressionFactory',ExpressionFactory);
 Class.add('Route',Route);
