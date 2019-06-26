@@ -1839,6 +1839,7 @@ class Element{
 	 */
 	render(module,parent){
 		const me = this;
+		
 		// 设置父对象
 		if(parent){
 			me.parentKey = parent.key;
@@ -1868,7 +1869,6 @@ class Element{
 				}
 			}	
 		}
-		
 		return true;
 	}
 	/**
@@ -1953,7 +1953,7 @@ class Element{
 					el1 = newEl(me,parent,el);
 					genSub(el1,me);
 				}else{
-					el1 = newText(metextContent);
+					el1 = newText(me.textContent);
 				}
 				if(params.index === el.childNodes.length){
 					el.appendChild(el1);
@@ -1982,7 +1982,7 @@ class Element{
 		 * 新建文本节点
 		 */
 		function newText(text,dom){
-			if('html' === dom.type){ //html fragment 或 element
+			if(dom && 'html' === dom.type){ //html fragment 或 element
 				let div = nodom.newEl('div');
 				div.setAttribute('key',dom.key);
 				div.appendChild(text);
@@ -2018,9 +2018,10 @@ class Element{
 	/**
 	 * 克隆
 	 */
-	clone(module){
+	clone(){
 		const me = this;
 		let dst = new Element();
+
 		//简单属性
 		nodom.getOwnProps(me).forEach((p)=>{
 			if(typeof me[p] !== 'object'){
@@ -2051,7 +2052,7 @@ class Element{
 		dst.expressions = me.expressions;
 	
 		me.children.forEach((d)=>{
-			dst.children.push(d.clone(module));
+			dst.children.push(d.clone());
 		});
 		return dst;
 	}
@@ -2296,6 +2297,20 @@ class Element{
 			}
 		}
 	}
+
+
+	queryProp(prop,value){
+		const me = this;
+		if(me.key === key){
+			return me;
+		}
+		for(let i=0;i<me.children.length;i++){
+			let dom = me.children[i].query(key);
+			if(dom){
+				return dom;
+			}
+		}	
+	}
 	/**
 	 * 比较节点
 	 * @param dst 	待比较节点
@@ -2384,7 +2399,7 @@ class Element{
 				me.children.forEach((dom1,ind)=>{
 					let dom2 = dst.children[ind];
 					// dom1和dom2相同key
-					if(dom1.key !== dom2.key){
+					if(!dom2 || dom1.key !== dom2.key){
 						dom2 = undefined;
 						//找到key相同的节点
 						for(let i=0;i<dst.children.length;i++){
@@ -3201,9 +3216,12 @@ class DirectiveManager{
 
 	/**
      * 执行指令
-     * @param arguments 参数数组  0模块 1指令类型 2待处理值 3-n处理参数
+     * @param directive     指令
+     * @param dom           虚拟dom
+     * @param module        模块
+     * @param parent        父dom
 	 */
-	static exec(directive,ele,parent){
+	static exec(directive,dom,module,parent){
 		if(!this.directiveTypes.has(directive.type)){
 			throw Error.handle('notexist1',nodom.words.directiveType,type);
 		}
@@ -3482,7 +3500,7 @@ class Module{
 	render(){
 		const me = this;
 		//容器没就位或state不为active则不渲染，返回渲染失败
-		if(!me.hasContainer() || me.state !== 3 || !me.virtualDom){
+		if(me.state !== 3 || !me.virtualDom || !me.hasContainer()){
 			return false;
 		}
 
@@ -3519,6 +3537,7 @@ class Module{
 				me.firstRenderOps.forEach((foo)=>{
 					nodom.apply(foo,me,[]);
 				});
+				me.firstRenderOps = [];
 			},0);
 			
 		}else{  //增量渲染
@@ -4973,13 +4992,14 @@ DirectiveManager.addType('field',{
             eventName = 'change';
         }
 
+        // if(dom.props.hasOwnProperty('name')){
+          dom.props['name'] = field;
+        // }
+
         //增加name和value属性，属性可能在后面，需要延迟处理
         setTimeout(()=>{
             //增加name属性
-            if(!dom.props.hasOwnProperty('name')){
-              dom.props['name'] = field;
-            }
-
+            
             //增加value属性
             if(!dom.exprProps.hasOwnProperty('value') && !dom.props.hasOwnProperty('value')){
                 dom.exprProps['value'] = new Expression(field,module);
@@ -4994,7 +5014,6 @@ DirectiveManager.addType('field',{
                 let type = dom.props['type'];
                 let model = module.modelFactory.get(dom.modelId);
                 let field = dom.getDirective('field').value;
-                let fv = model.data[field];
                 let v = view.value;
                 //根据选中状态设置checkbox的value
                 if(type === 'checkbox'){
@@ -5064,99 +5083,125 @@ DirectiveManager.addType('field',{
  * 指令名 validity
  * 描述：字段指令
  */
-DirectiveManager.addType('validity',{
+ DirectiveManager.addType('validity',{
     init:(directive,dom,module)=>{
-        var ind,fn=value,method;
+        let ind,fn,method;
+        let value = directive.value;
         //处理带自定义校验方法
         if((ind=value.indexOf('|')) !== -1){
             fn = value.substr(0,ind);
             method=value.substr(ind+1);
+        }else{
+            fn = value;
+        }
+        directive.value = fn;
+        
+        directive.params = {
+            enabled:false    //不可用
+        }
+        //如果有方法，则需要存储
+        if(method){
+            directive.params.method = method;
         }
 
-        directive.value = fn;
-        //如果有方法，则需要存储
-        directive.method = method;
-        //需要找到form
+        //如果没有子节点，添加一个，需要延迟执行
+        setTimeout(()=>{
+            if(dom.children.length === 0){
+                let vd1 = new Element();
+                vd1.textContent = '   ';
+                dom.children.push(vd1);
+            }else{ //子节点
+                dom.children.forEach((item)=>{
+                    if(item.children.length === 0){
+                        let vd1 = new Element();
+                        vd1.textContent = '   ';
+                        item.children.push(vd1);      
+                    }
+                })
+            }
 
+        },0);
+
+        module.addFirstRenderOperation(function(){
+            const m = this;
+            const el = module.container.querySelector("[name='" + directive.value + "']");
+            if(el){
+                //增加事件
+                el.addEventListener('focus',function(e){
+                    el.canBeValid = true;
+                });
+                el.addEventListener('blur',function(e){
+                    Renderer.add(m);
+                });
+            }
+        });
     },
     
     handle:(directive,dom,module,parent)=>{
-        //首次渲染不处理
-        if(module.firstRender){
+        const el = module.container.querySelector("[name='" + directive.value + "']");
+        if(!el || !el.canBeValid){
+            dom.dontRender = true;
             return;
         }
         
-        function valid(fieldName){
-            let form = module.container.querySelector("[key='" + directive.form + "']");
-            let el = form.querySelector("[name='" + fieldName + "']");
-            if(el === null){
-                return;
+        let chds = [];
+        //找到带rel的节点
+        dom.children.forEach((item)=>{
+            if(item.tagName !== undefined && item.props.hasOwnProperty('rel')){
+                chds.push(item);
             }
-            let chds = [];
+        });
+        
+        let resultArr = [];
 
-            //找到带rel的节点
-            dom.children.forEach((item)=>{
-                if(item.tagName !== undefined && item.props.hasOwnProperty('rel')){
-                    chds.push(item);
-                }
-            });
-            
-            let resultArr = [];
-
-            //自定义方法校验
-            if(directive.method){
-                var foo = module.methodFactory.get(directive.method);
-                if(nodom.isFunction(foo)){
-                    let r = foo.call(module.model,el.value);
-                    if(!r){
-                        resultArr.push('custom');
-                    }
-                }
-            
-            }
-
-            let vld = el.validity;
-            if(!vld.valid){
-                // 查找校验异常属性
-                for(var o in vld){
-                    if(vld[o] === true) {
-                        resultArr.push(o);
-                    }
+        //自定义方法校验
+        if(directive.params.method){
+            const foo = module.methodFactory.get(directive.params.method);
+            if(nodom.isFunction(foo)){
+                let r = foo.call(module.model,el.value);
+                if(!r){
+                    resultArr.push('custom');
                 }
             }
-
-            if(resultArr.length>0){
-                //转换成ref对应值
-                let vn = handle(validArr);
-                //单个校验
-                if(chds.length === 0){
-                    let rel = dom.props['ref'];
-                    if(rel === vn){
-                        setTip(dom,vn);
-                    }else{  //隐藏
-                        dom.dontRender = true;
-                    }
-                }else{ //多个校验
-                    for(let i=0;i<chds.length;i++){
-                        let rel = chds[i].props['ref'];
-                        if(rel === vn){
-                            setTip(chds[i],vn);
-                        }else{ //隐藏
-                            chds[i].dontRender = true;
-                        }   
-                    }
-                }
-            }
-    
         }
 
+        let vld = el.validity;
+        if(!vld.valid){
+            // 查找校验异常属性
+            for(var o in vld){
+                if(vld[o] === true) {
+                    resultArr.push(o);
+                }
+            }
+        }
+        if(resultArr.length>0){
+            //转换成ref对应值
+            let vn = handle(resultArr);
+            //单个校验
+            if(chds.length === 0){
+                setTip(dom,vn,el);
+            }else{ //多个校验
+                for(let i=0;i<chds.length;i++){
+                    let rel = chds[i].props['rel'];
+                    if(rel === vn){
+                        setTip(chds[i],vn,el);
+                    }else{ //隐藏
+                        chds[i].dontRender = true;
+                    }
+                }
+            }
+        }else{
+            dom.dontRender = true;
+        }
+    
 
         /**
          * 设置提示
          * @param vd    dom节点
          * @param vn    验证结果名
          */
-        function setTip(vd,vn){
+        function setTip(vd,vn,el){
+            //子节点不存在，添加一个
             let text = vd.children[0].textContent.trim();
             if(text === ''){  //没有提示内容，根据类型提示
                 text = nodom.compileStr(nodom.FormMsgs[vn],el.getAttribute(vn));
@@ -5184,11 +5229,15 @@ DirectiveManager.addType('validity',{
                         return 'max';
                     case 'patternMismatch':
                         return 'pattern';
+                    default:
+                        return arr[i];
                 }
             }
         }
     }
 });
+
+
 /**
  * 过滤器类型初始化
  */

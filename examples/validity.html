@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<script src='../js/bin/nodom-2.0.js'></script>
+	<style>
+		.label{
+			width:100px;
+			display:inline-block;
+		}
+		.tip{
+			color:red;
+			font-size:12px;
+		}
+	</style>
+
+</head>
+<body>
+	<div>
+	<form class='result code1'>
+	<div class='row'>
+		<span class='label'>姓名</span>
+		<!--设置正则表达式校验(pattern) 和 不能为空校验required-->
+		<input type='text' x-field='userName' value='{{userName}}' pattern='\w.{5,19}' required/>
+		<!--添加了自定义校验提示内容，注意span 的 rel 设置-->
+		<span x-validity='userName' class='tip'>
+			<span rel='pattern'>请输入以字母开头且长度为6-20的字符串</span>
+			<span rel='required'></span>
+		</span>
+	</div>
+
+	<div class='row'>
+		<span class='label'>年龄</span>
+		<!--设置 最小值(min)和最大值(max)校验-->
+		<input type='number' x-field='age'  value='{{age}}' min="1" max="100"/>
+		<span class='tip' x-validity='age'></span>
+	</div>
+
+	<div class='row'>
+		<span class='label'>密码</span>
+		<!--设置不能为空校验required-->
+		<input type='password' name='password' x-field='password' required/>
+		<span x-validity='password' class='tip'></span>
+	</div>
+
+	<div class='row'>
+		<span class='label'>确认密码</span>
+		<!--设置不能为空校验required-->
+		<input type='password' name='password2' x-field='password2' required/>
+		<span x-validity='password2|compare' class='tip'>
+			<span rel='required'></span>
+			<span rel='custom'>密码和确认密码不一致</span>
+		</span>
+	</div>
+	
+	<div class='row'>
+		<span class='label'>性别</span>
+		<input type='radio' x-field='sexy' value='{{sexy}}'/>男
+		<input type='radio' x-field='sexy' value='0'/>女
+	</div>
+
+	<div class='row'>
+		<span class='label'>出生日期</span>
+		<!--设置最小日期(min)和最大日起(max)校验 不能为空校验required，自动检测是否为有效日期格式-->
+		<input type='date' x-field='birth' value="{{birth|date:'yyyy/MM/dd'}}" required min='1900/01/01' max='2017/01/01'  value='{{birth}}'/>
+		<span x-validity='birth' class='tip'></span>
+	</div>
+	
+	<div class='row'>
+		<span class='label'>邮箱</span>
+		<!--设置不能为空校验required，自动检测是否为有效email格式-->
+		<input type='email' x-field='email' value='{{email}}' required/>
+		<span class='tip' x-validity='email'></span>
+	</div>
+	
+	<div class='row'>
+		<span class='label'>主页</span>
+		<!--自动检测是否为有效url格式-->
+		<input type='url' name='homepage' x-field='homepage'  value='{{homepage}}'/>
+		<span class='tip' x-validity='homepage'></span>
+	</div>
+
+	<div class='row'>
+		<span class='label'>主题颜色</span>
+		<!--自动检测是否为有效color格式-->
+		<input type='color' x-field='themecolor'  value='{{themecolor}}'/>
+		<span x-validity='themecolor' class='tip'></span>
+	</div>
+
+	<button e-click='check'>确定</button>
+</form>
+</div>
+</body>
+
+<script>
+	new Module({
+		el:'div',
+		root:true,
+		data:{
+			userName:'a',
+			age:0,
+			sexy:1,
+			agree:'yes',
+			password:'',
+			password2:'',
+			birth:(new Date()).getTime(),
+			email:'',
+			homepage:'http://',
+			themecolor:'#666666'
+		},
+		methods:{
+			check:function(){
+				//判断当前form校验结果
+				// console.log('form校验结果是：' + DD.$validity.check());
+			},
+			compare:function(){
+				let data = this.data;
+				if(data.password !== data.password2){
+					return false;
+				}
+				return true;
+			}
+		}
+	});
+</script>
+</html>

@@ -226,7 +226,7 @@ class Module{
 	render(){
 		const me = this;
 		//容器没就位或state不为active则不渲染，返回渲染失败
-		if(!me.hasContainer() || me.state !== 3 || !me.virtualDom){
+		if(me.state !== 3 || !me.virtualDom || !me.hasContainer()){
 			return false;
 		}
 
@@ -263,6 +263,7 @@ class Module{
 				me.firstRenderOps.forEach((foo)=>{
 					nodom.apply(foo,me,[]);
 				});
+				me.firstRenderOps = [];
 			},0);
 			
 		}else{  //增量渲染

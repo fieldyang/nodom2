@@ -59,9 +59,12 @@ class DirectiveManager{
 
 	/**
      * 执行指令
-     * @param arguments 参数数组  0模块 1指令类型 2待处理值 3-n处理参数
+     * @param directive     指令
+     * @param dom           虚拟dom
+     * @param module        模块
+     * @param parent        父dom
 	 */
-	static exec(directive,ele,parent){
+	static exec(directive,dom,module,parent){
 		if(!this.directiveTypes.has(directive.type)){
 			throw Error.handle('notexist1',nodom.words.directiveType,type);
 		}

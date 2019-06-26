@@ -25,6 +25,7 @@ class Element{
 	 */
 	render(module,parent){
 		const me = this;
+		
 		// 设置父对象
 		if(parent){
 			me.parentKey = parent.key;
@@ -54,7 +55,6 @@ class Element{
 				}
 			}	
 		}
-		
 		return true;
 	}
 	/**
@@ -139,7 +139,7 @@ class Element{
 					el1 = newEl(me,parent,el);
 					genSub(el1,me);
 				}else{
-					el1 = newText(metextContent);
+					el1 = newText(me.textContent);
 				}
 				if(params.index === el.childNodes.length){
 					el.appendChild(el1);
@@ -168,7 +168,7 @@ class Element{
 		 * 新建文本节点
 		 */
 		function newText(text,dom){
-			if('html' === dom.type){ //html fragment 或 element
+			if(dom && 'html' === dom.type){ //html fragment 或 element
 				let div = nodom.newEl('div');
 				div.setAttribute('key',dom.key);
 				div.appendChild(text);
@@ -204,9 +204,10 @@ class Element{
 	/**
 	 * 克隆
 	 */
-	clone(module){
+	clone(){
 		const me = this;
 		let dst = new Element();
+
 		//简单属性
 		nodom.getOwnProps(me).forEach((p)=>{
 			if(typeof me[p] !== 'object'){
@@ -237,7 +238,7 @@ class Element{
 		dst.expressions = me.expressions;
 	
 		me.children.forEach((d)=>{
-			dst.children.push(d.clone(module));
+			dst.children.push(d.clone());
 		});
 		return dst;
 	}
@@ -482,6 +483,20 @@ class Element{
 			}
 		}
 	}
+
+
+	queryProp(prop,value){
+		const me = this;
+		if(me.key === key){
+			return me;
+		}
+		for(let i=0;i<me.children.length;i++){
+			let dom = me.children[i].query(key);
+			if(dom){
+				return dom;
+			}
+		}	
+	}
 	/**
 	 * 比较节点
 	 * @param dst 	待比较节点
@@ -570,7 +585,7 @@ class Element{
 				me.children.forEach((dom1,ind)=>{
 					let dom2 = dst.children[ind];
 					// dom1和dom2相同key
-					if(dom1.key !== dom2.key){
+					if(!dom2 || dom1.key !== dom2.key){
 						dom2 = undefined;
 						//找到key相同的节点
 						for(let i=0;i<dst.children.length;i++){
