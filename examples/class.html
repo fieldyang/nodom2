@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Document</title>
+    <script src='../../js/bin/nodom-2.0.js'></script>
+
+    <style>
+        .tip {
+            color: darkorange;
+        }
+        
+        .red {
+            color: red;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="code">
+        <div class="tip">样式：price>100，字体变红色；discount<0.8，字体加粗</div>
+        <ul>
+            <li x-repeat="commodities" x-class="{red:'price>100',bold:'discount<0.8'}">
+                {{name}}的价格是{{price}}，折扣是{{discount}}
+            </li>
+        </ul>
+    </div>
+</body>
+<script>
+    let mod = new Module({
+        el: '.code',
+        root: true,
+        data: {
+            commodities: [{
+                name: 'T恤',
+                price: 150,
+                discount: 0.9
+            }, {
+                name: '短裤',
+                price: '80',
+                discount: 0.75
+            }, {
+                name: '外套',
+                price: 200,
+                discount: 0.6
+            }]
+        }
+    });
+
+</script>
+
+</html>
