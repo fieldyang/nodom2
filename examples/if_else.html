@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Document</title>
+    <script src='../../js/bin/nodom-2.0.js'></script>
+
+    <style>
+        .introduce {
+            color: blueviolet;
+        }
+
+        .tip {
+            color: darkorange;
+        }
+
+        .code {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="view">
+        <div class="code">
+            <div class="introduce">单个if指令</div>
+            <div class="tip">如果discount<0.8，显示价格</div>
+            <div x-if="discount<0.8">价格：{{price}}</div>
+        </div>
+        <div class="code">
+            <div class="introduce">完整的if/else指令</div>
+            <div class="tip">如果age<18，显示未成年，否则显示成年</div>
+            <div class="red" x-if="age<18">年龄：{{age}}，未成年</div>
+            <div class="bold" x-else>年龄：{{age}}，成年</div>
+        </div>
+        <div class="code">
+            <div class="introduce">多个if/else</div>
+            <div class='tip'>根据不同分数显示不同等级，<60不及格，60-69及格，70-79中等，80-89良好，>=90优秀</div>
+                <div>成绩：{{grade}}</div>
+                等级：<span x-if='grade<60'>不及格</span>
+                    <span x-else>
+                        <span x-if='grade>=60 && grade<70'>
+                            及格
+                        </span>
+                        <span x-else>
+                            <span x-if='grade>=70 && grade<80'>
+                                中等
+                            </span>
+                            <span x-else>
+                                <span x-if='grade>=80 && grade<90'>
+                                    良好
+                                </span>
+                                <span x-else>
+                                    优秀
+                                </span>
+                            </span>
+                        </span>
+                </span>
+        </div>
+    </div>
+</body>
+<script>
+    let mod = new Module({
+        el: '.view',
+        root: true,
+        data: {
+            discount:0.5,
+            price:200,
+            age:20,
+            grade:73
+        }
+    });
+
+</script>
+
+</html>
