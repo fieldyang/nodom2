@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Document</title>
+    <script src='../../js/bin/nodom-2.0.js'></script>
+
+    <style>
+        .code {
+            margin: 20px auto;
+        }
+
+        .tip {
+            color: darkorange;
+        }
+
+        .red {
+            color: red;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="view">
+        <div class="code">
+            <div class="tip">多层model</div>
+            <div x-model="user">
+                顾客信息：
+                <div x-model="name">
+                    <div>姓氏：{{lastName}}</div>
+                    <div>名字：{{firstName}}</div>
+                </div>
+            </div>
+        </div>
+        <div class="code">
+            <div class="tip">多层数据</div>
+            <div x-model="user.order.foods">
+                用户点单：
+                <div>第一道菜：{{food1.name}}，价格：{{food1.price|currency}}</div>
+                <div>第二道菜：{{food2.name}}，价格：{{food2.price|currency}}</div>
+                <div>第三道菜：{{food3.name}}，价格：{{food3.price|currency}}</div>
+                <div>第四道菜：{{food4.name}}，价格：{{food4.price|currency}}</div>
+                <br />
+                金额：
+                <div>共消费：{{(food1.price+food2.price+food3.price+food4.price)|currency}}</div>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    let mod = new Module({
+        el: '.view',
+        root: true,
+        data: {
+            user: {
+                name: {
+                    firstName: 'Xiaoming',
+                    lastName: 'Zhang'
+                },
+                order: {
+                    foods: {
+                        food1: { name: '酸菜鱼', price: 40 },
+                        food2: { name: '麻婆豆腐', price: 15 },
+                        food3: { name: '回锅肉', price: 28 },
+                        food4: { name: '番茄蛋汤', price: 8 }
+                    }
+                }
+            }
+        }
+    });
+
+</script>
+
+</html>
