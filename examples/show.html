@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Document</title>
+    <script src='../../js/bin/nodom-2.0.js'></script>
+
+    <style>
+        .code {
+            margin: 20px auto;
+        }
+
+        .tip {
+            color: darkorange;
+        }
+
+        .red {
+            color: red;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="view">
+        <div class="code">
+            <div class="tip">商品列表，如果discount存在且discount<0.8则显示折扣价 </div>
+            <div x-repeat='commodities'>
+                {{name}}的价格是{{price}}
+                <span class="red" x-show="discount && discount<0.8">，折扣价是{{discount*price}}
+                asdfasdfasdsfsafsda</span>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    // 用show的用法，visibility：hidden的问题在于，不显示，但是占了空间
+    // li标签里面的句号为啥没了？
+    let mod = new Module({
+        el: '.view',
+        root: true,
+        data: {
+            commodities: [
+                { name: '酷炫夹克', price: 200, discount: 0.6 },
+                { name: '运动棉袜', price: 8, discount: 1 },
+                { name: '钥匙扣', price: 15, discount: 0.7 }
+            ]
+        }
+    });
+
+</script>
+
+</html>
