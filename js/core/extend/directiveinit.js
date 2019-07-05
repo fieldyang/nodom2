@@ -1,39 +1,30 @@
-
 /**
- * 指令名 model
- * 描述：模型
- */
-
-/**
- *    每个指令类型都有一个init和handle方法，init和handle都可选
- *    init 方法在编译时执行，包含一个参数 directive 指令，无返回
- *    handle方法在渲染时执行，包含三个参数 directive 指令  vdom 虚拟dom  parent父对象(可选)
- *    return true/false false则不进行后面的所有渲染工作
+ *  指令类型初始化    
+ *  每个指令类型都有一个init和handle方法，init和handle都可选
+ *  init 方法在编译时执行，包含一个参数 directive(指令)、dom(虚拟dom)、module(模块)，无返回
+ *  handle方法在渲染时执行，包含三个参数 directive(指令)、dom(虚拟dom)、module(模块)、parent(父虚拟dom)
+ *  return true/false false则不进行后面的所有渲染工作
  */ 
 
 DirectiveManager.addType('model',{
     prio:1,
     init:(directive,dom,module)=>{
         let value = directive.value;
-
-        if(nodom.isEmpty(value)){
-            throw Error.handle("paramException","x-model");
-        }
-        
         //处理以.分割的字段，没有就是一个
-        let arr = new Array();
-        value.split('.').forEach((item)=>{  
-            let ind1 = -1,ind2 = -1;
-            if((ind1 = item.indexOf('[')) !== -1 && (ind2 = item.indexOf(']')) !== -1){ //数组
-                let fn = item.substr(0,ind1);
-                let index = item.substring(ind1+1,ind2);
-                arr.push(fn + ',' + index);
-            }else{ //普通字符串
-                arr.push(item);
-            }
-        });
-        directive.value = arr;
-
+        if(nodom.isString(value)){
+            let arr = new Array();
+            value.split('.').forEach((item)=>{  
+                let ind1 = -1,ind2 = -1;
+                if((ind1 = item.indexOf('[')) !== -1 && (ind2 = item.indexOf(']')) !== -1){ //数组
+                    let fn = item.substr(0,ind1);
+                    let index = item.substring(ind1+1,ind2);
+                    arr.push(fn + ',' + index);
+                }else{ //普通字符串
+                    arr.push(item);
+                }
+            });
+            directive.value = arr;    
+        }
     },
 
     handle:(directive,dom,module,parent)=>{
@@ -83,20 +74,19 @@ DirectiveManager.addType('repeat',{
         }
 
         // 增加model指令
-        let dir1 = new Directive('model',modelName,dom);
-        dom.directives.unshift(dir1);
+        if(!dom.hasDirective('mocel')){
+            dom.directives.push(new Directive('model',modelName,dom,module));    
+        }
+        
         directive.value = modelName;
     },
     handle:(directive,dom,module,parent)=>{
-        let modelFac = module.modelFactory;
-
+        const modelFac = module.modelFactory;
         let rows = modelFac.get(dom.modelId).data;
-
         //有过滤器，处理数据集合
         if(directive.filter !== undefined){
             rows = directive.filter.exec(rows,module);
         }
-        
 
         // 无数据，不渲染
         if(rows === undefined || rows.length === 0){
@@ -119,7 +109,6 @@ DirectiveManager.addType('repeat',{
             rows[i].$index = i;
             chds.push(node);     
         }
-        
 
         //找到并追加到dom后
         if(chds.length > 0){
@@ -134,7 +123,6 @@ DirectiveManager.addType('repeat',{
         
         // 不渲染该节点
         dom.dontRender = true;
-        // return true;
         return false;
 
         function setKey(node,key,id){
@@ -234,17 +222,16 @@ DirectiveManager.addType('show',{
         // 获取style属性数组
         let arr = dom.style?dom.style.split(';'):[];
         let find = false;
-        let show = v && v !== 'false'? 'visible':'hidden';
-        
+        let show = v && v !== 'false'? 'block':'none';
         for(let i=0;i<arr.length;i++){
-            if(arr[i].indexOf('visibility')){
+            if(arr[i].indexOf('display:') === -1){
                 find = true;
-                arr[i] = 'visibility:' + show;
+                arr[i] = 'display:' + show;
                 break;
             }
         }
         if(!find){
-            arr.push('visibility:' + show);
+            arr.push('display:' + show);
         }
         //组合style属性
         dom.props['style'] = arr.join(';');
@@ -320,20 +307,8 @@ DirectiveManager.addType('field',{
             eventName = 'change';
         }
 
-        // if(dom.props.hasOwnProperty('name')){
-          dom.props['name'] = field;
-        // }
-
-        //增加name和value属性，属性可能在后面，需要延迟处理
-        setTimeout(()=>{
-            //增加name属性
-            
-            //增加value属性
-            if(!dom.exprProps.hasOwnProperty('value') && !dom.props.hasOwnProperty('value')){
-                dom.exprProps['value'] = new Expression(field,module);
-            }    
-        },0);
-        
+        //增加name属性
+        dom.props['name'] = field;
 
         //增加自定义方法
         let method = '$nodomGenMethod' + nodom.genId();
@@ -366,18 +341,22 @@ DirectiveManager.addType('field',{
         );
         //追加事件
         dom.events[eventName] = new Event(eventName,method);
+
+        //增加value属性，属性可能在后面，需要延迟处理
+        setTimeout(()=>{
+            //增加value属性
+            if(!dom.exprProps.hasOwnProperty('value') && !dom.props.hasOwnProperty('value')){
+                dom.exprProps['value'] = new Expression(field,module);
+            }    
+        },0);
+        
     },
 
     handle:(directive,dom,module,parent)=>{
-        let type = dom.props['type'];
-        let tgname = dom.tagName.toLowerCase();
-
-        if(type !== 'radio' && type !== 'checkbox' && tgname !== 'select'){
-            return;
-        }
-
-        let model = module.modelFactory.get(dom.modelId);
-        let dataValue = model.data[directive.value];
+        const type = dom.props['type'];
+        const tgname = dom.tagName.toLowerCase();
+        const model = module.modelFactory.get(dom.modelId);
+        const dataValue = model.data[directive.value];
         let value = dom.props['value'];
             
         if(type === 'radio'){
@@ -450,6 +429,7 @@ DirectiveManager.addType('field',{
 
         },0);
 
+        //添加focus和blur事件
         module.addFirstRenderOperation(function(){
             const m = this;
             const el = module.container.querySelector("[name='" + directive.value + "']");
@@ -467,6 +447,7 @@ DirectiveManager.addType('field',{
     
     handle:(directive,dom,module,parent)=>{
         const el = module.container.querySelector("[name='" + directive.value + "']");
+        
         if(!el || !el.canBeValid){
             dom.dontRender = true;
             return;

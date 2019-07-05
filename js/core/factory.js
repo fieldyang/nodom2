@@ -7,28 +7,28 @@ class Factory{
 			this.moduleName = module.name;
 		}
 		//容器map
-		this.items = new Map();
+		this.items = Object.create(null);
 	}
 
 	/**
 	 * 添加到工厂
 	 */
 	add(name,item){
-		this.items.set(name,item);
+		this.items[name] = item;
 	}
 
 	/**
 	 * 获得item
 	 */
 	get(name){
-		return this.items.get(name);
+		return this.items[name];
 	}
 
  	/**
  	 * 从容器移除
  	 */
 	remove(name){
-		this.items.delete(name);
+		delete this.items[name];
 	}
 
 	

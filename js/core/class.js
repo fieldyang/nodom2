@@ -23,13 +23,21 @@ class Class{
 	/**
 	 * 创建实例(对象)
 	 * @param clsName 	类名
-	 * @param 
+	 * @param params 	参数数组
 	 * @return 			根据类创建的实例
 	 */
-	static newInstance(clsName,config){
+	static newInstance(clsName,params){
 		let cls = this.items.get(clsName);
-		if(cls === undefined){}
-		return Reflect.construct(cls);
+		if(cls === undefined){
+			return null;
+		}
+		return Reflect.construct(cls,params||[]);
+	}
+
+	static getClassName(obj){
+		if(obj.constructor){
+			return obj.constructor.name;	
+		}
 	}
 }
 

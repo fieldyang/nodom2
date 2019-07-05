@@ -29,7 +29,7 @@ class Event{
                 }else{              //事件附加参数
                     me[item] = true;
                 }
-            });    
+            });
         }
         //触屏事件根据设备类型进行处理
         if(nodom.config.deviceType === 1){
@@ -53,30 +53,32 @@ class Event{
 
     /**
      * 事件触发
-     * @param model     模型
      * @param e         事件
-     * @param view      事件element
-     * @param module    模块
      */
     fire(e){
         const me = this;
-        let model = me.module.modelFactory.get(me.virtualDom.modelId);
+        const module = ModuleFactory.get(me.moduleName);
+        const dom = module.renderTree.query(me.domKey);
+        const el = module.container.querySelector("[key='" + me.domKey + "']");
+        const model = module.modelFactory.get(dom.modelId);
         //如果capture为true，则先执行自有事件，再执行代理事件，否则反之
         if(me.capture){
-            handleSelf(e,model);
-            handleDelg(e,model);
+            handleSelf(e,model,module,el);
+            handleDelg(e,model,module,el);
         }else{
-            if(handleDelg(e,model)){
-                handleSelf(e,model);
+            if(handleDelg(e,model,module,el)){
+                handleSelf(e,model,module,el);
             }
         }
 
         //判断是否清除事件
         if(me.events !== undefined && me.events[me.name].length === 0 && me.handler === undefined){
             if(ExternalEvent.TouchEvents[me.name]){
-                ExternalEvent.unregist(me);
+                ExternalEvent.unregist(me,el);
             }else{
-                me.el.removeEventListener(me.name,me.handleEvent);    
+                if(el !== null){
+                    el.removeEventListener(me.name,me.handleEvent); 
+                }
             }
         }
 
@@ -84,10 +86,10 @@ class Event{
          * 处理自有事件
          * @param model     模型
          * @param e         事件
-         * @param view      事件element
          * @param module    模块
+         * @param el        事件element
          */
-        function handleDelg(e,model){
+        function handleDelg(e,model,module,el){
             //代理事件执行
             if(me.events === undefined){
                 return true;
@@ -121,18 +123,18 @@ class Event{
          * 处理自有事件
          * @param model     模型
          * @param e         事件
-         * @param view      事件element
          * @param module    模块
+         * @param el        事件element
          */
-        function handleSelf(e,model){
-            let foo = me.module.methodFactory.get(me.handler);
+        function handleSelf(e,model,module,el){
+            let foo = module.methodFactory.get(me.handler);
             //自有事件
             if(nodom.isFunction(foo)){
                 //禁止冒泡
                 if(me.nopopo){
                     e.stopPropagation();
                 }
-                nodom.apply(foo,model,[e,me.module,me.el,me.virtualDom]);
+                nodom.apply(foo,model,[e,module,el,dom]);
                 //事件只执行一次，则删除handler
                 if(me.once){  
                     delete me.handler;
@@ -143,18 +145,18 @@ class Event{
         
     /**
      * 绑定事件
-     * @param view      element
-     * @param model     view模型
      * @param module    模块
+     * @param vdom      虚拟dom
+     * @param el        element
+     
      */
     bind(module,vdom,el){
         const me = this;
-        me.virtualDom = vdom;
-        me.el = el;
-        me.module = module;
+        me.domKey = vdom.key;
+        me.moduleName = module.name;
         //触屏事件
         if(ExternalEvent.TouchEvents[me.name]){
-            ExternalEvent.regist(me);
+            ExternalEvent.regist(me,el);
         }else{
             me.handleEvent = function(e){
                 me.fire(e);
@@ -173,9 +175,8 @@ class Event{
      */
     delegateTo(module,vdom,el,parent,parentEl){
         const me = this;
-        me.virtualDom = vdom;
-        me.el = el;
-        me.module = module;
+        me.domKey = vdom.key;
+        me.moduleName = module.name;
 
         //如果不存在父对象，则用body
         if(!parentEl){
@@ -246,12 +247,18 @@ class ExternalEvent{
      * 注册事件
      * @param evtObj    event对象
      */
-    static regist(evtObj){
+    static regist(evtObj,el){
         let evt = ExternalEvent.TouchEvents[evtObj.name];
         //如果绑定了，需要解绑
         if(!nodom.isEmpty(evtObj.touchListeners)){
             ExternalEvent.unregist(evtObj);
         }
+        
+        if(!el){
+            const module = ModuleFactory.get(evtObj.moduleName);
+            el = module.container.querySelector("[key='" + evtObj.domKey + "']");    
+        }
+        // el不存在
         evtObj.touchListeners = {};
         if(evt){
             // 绑定事件组
@@ -261,7 +268,9 @@ class ExternalEvent{
                     evt[ev](e,evtObj);
                 }
                 //绑定事件
-                evtObj.el.addEventListener(ev,evtObj.touchListeners[ev],evtObj.capture);
+                if(el !== null){
+                    el.addEventListener(ev,evtObj.touchListeners[ev],evtObj.capture);    
+                }
             });
         }
     }
@@ -270,13 +279,19 @@ class ExternalEvent{
      * 取消已注册事件
      * @param evtObj    event对象
      */
-    static unregist(evtObj){
+    static unregist(evtObj,el){
         let evt = nodom.Event.TouchEvents[evtObj.eventName];
+        if(!el){
+            const module = ModuleFactory.get(evtObj.moduleName);
+            el = module.container.querySelector("[key='" + evtObj.domKey + "']");    
+        }
         if(evt){
             // 解绑事件
-            nodom.getOwnProps(evtObj.touchListeners).forEach(function(ev){
-                evtObj.view.removeEventListener(ev,evtObj.touchListeners[ev]);
-            });
+            if(el !== null){
+                nodom.getOwnProps(evtObj.touchListeners).forEach(function(ev){
+                    el.removeEventListener(ev,evtObj.touchListeners[ev]);
+                });    
+            }
         }  
     }
 

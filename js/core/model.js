@@ -4,7 +4,6 @@
 class Model{
 	constructor(data,module){
 		const me = this;
-		me.className = 'Model';
 		me.data = data;
 		me.fields = {};
 		// modelId

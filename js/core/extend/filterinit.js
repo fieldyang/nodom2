@@ -20,11 +20,7 @@ FilterManager.addType('date',(value,param)=>{
  * 转换为货币
  * @param sign  货币符号¥ $ 等，默认 ¥
  */
-FilterManager.addType('currency',(value,param)=>{
-    let sign;
-    if(nodom.isArray(param)){
-        sign = param[0];
-    }
+FilterManager.addType('currency',(value,sign)=>{
     if(isNaN(value)){
         return '';
     }
@@ -42,7 +38,8 @@ FilterManager.addType('currency',(value,param)=>{
  * @param digits    小数点后位数
  */
 FilterManager.addType('number',(value,param)=>{
-    let digits = param ||0;
+    let digits = param || 0;
+
     if(isNaN(value) || digits < 0){
         return '';
     }
@@ -54,7 +51,7 @@ FilterManager.addType('number',(value,param)=>{
     for(let i=0;i<digits;i++){
         x*=10;
     }
-    return (value * x + 0.5 | 0) / x;
+    return ((value * x + 0.5) | 0) / x;
 });
 
 /**

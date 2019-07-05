@@ -7,19 +7,20 @@ class Directive{
 	 * @param type  	类型
 	 * @param value 	指令值
 	 * @param vdom 		虚拟dom
+	 * @param module 	模块	
 	 */
 	constructor(type,value,vdom,module){
-		this.className = 'Directive';
-		this.type = type;
-		
-		if(value !== undefined){
-			this.value = value.trim();
+		const me = this;
+		me.type = type;
+		// console.log(type,value);
+		if(nodom.isString(value)){
+			me.value = value.trim();
+		}
+		if(type !== undefined){
+			nodom.apply(DirectiveManager.init,DirectiveManager,[me,vdom,module]);
 		}
 
-		if(type !== undefined){
-			nodom.apply(DirectiveManager.init,DirectiveManager,[this,vdom,module]);
-		}
-		this.id = nodom.genId();
+		me.id = nodom.genId();
 	}
 
 	/**

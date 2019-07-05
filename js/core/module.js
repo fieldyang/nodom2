@@ -5,7 +5,6 @@ class Module{
 	constructor(config){
 		const me = this;
 		me.id = nodom.genId();
-		me.className = 'Module';
 		me.firstRender = true;	//是否是首次渲染
 		me.rendered = false;
 		me.virtualDom = undefined; 			//原始虚拟dom
@@ -31,7 +30,6 @@ class Module{
 		
 		me.methodFactory = new MethodFactory(me);
 		me.modelFactory = new ModelFactory(me);
-		
 		me.expressionFactory = new ExpressionFactory(me);
 		me.directiveFactory = new DirectiveFactory(me);
 		me.renderDoms = [];			//修改渲染的el数组
@@ -136,9 +134,9 @@ class Module{
     	}else if(config.templateUrl){ //模版文件
     		typeArr.push('template');
     		urlArr.push(appPath + config.templateUrl);
-    	}else if(config.compiledJson){ //编译后的json串
+    	}else if(config.compiledTemplate){ //编译后的json串
     		typeArr.push('compiled');
-    		urlArr.push(appPath + config.compiledJson);
+    		urlArr.push(appPath + config.compiledTemplate);
     	}
     	
     	//如果已存在templateStr，则直接编译
@@ -174,7 +172,9 @@ class Module{
 	    					me.virtualDom = Compiler.compile(me,file.trim());
 	    					break;
 	    				case 'compiled': //预编译后的js文件
-
+	    					let arr = Serializer.deserialize(file,me);
+	    					me.virtualDom = arr[0];
+	    					me.expressionFactory = arr[1];
 	    					break;
 	    				case 'data': 	//数据
 	    					me.model = new Model(JSON.parse(file),me);

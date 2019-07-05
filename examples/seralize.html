@@ -17,31 +17,25 @@
 </head>
 <body>
 	<div>
-		<button e-click='change'>change</button>
-		<button e-click='change1'>change1</button>
-		<div>
-			<div> 姓名:{{name}}</div>
-			<div> 性别:{{sexy}}</div>
-			<div> 已婚:{{married}}</div>
-			<div> 学历:{{edu}}</div>
-		</div>
-		<div>
-			<div>姓名：<input type='text' x-field='name' value='{{name}}'></div>
-			<div>性别:<input type='radio' x-field='sexy' value='M'/>男 <input x-field='sexy' type='radio' value='F'/>女</div>
-			<div>已婚<input type='checkbox' x-field='married' value='{{married}}' yes-value='1' no-value='0'>是</div>
-			<div>学历：<select x-field='edu'><option x-repeat='edus' value='{{eduId}}'>{{eduName}}</option></select></div>
-		</div>
 	</div>
+
+	<div id='mod2'></div>
 </body>
 	<script>
+		//设置template基础路径
+		nodom.config.appPath = '';
+		
 		let mod = new Module({
 			el:'div',
 			root:true,
+			//编译后的模版
+			compiledTemplate:'compile/mod1.json',
 			data:{
 				name:'yanglei',
 				sexy:'M',
 				married:1,
 				edu:2,
+				price:123.456,
 				edus:[
 					{eduId:1,eduName:'高中'},
 					{eduId:2,eduName:'本科'},
@@ -52,12 +46,16 @@
 			methods:{
 				change:function(e,module){
 					this.data.married = 0;
+					console.log(module.methodFactory);
 				},
 				change1:function(e,module){
 					this.data.name='yanglei123';
+				},
+				serialize:function(e,module){
+					console.log(Serializer.serialize(ModuleFactory.get(this.moduleName)));
 				}
 			}
 		});
-		
+
 	</script>
 </html>

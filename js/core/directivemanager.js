@@ -49,27 +49,32 @@ class DirectiveManager{
     /**
      * 指令初始化
      */
-    static init(directive,dom,module){
+    static init(directive,dom,module,el){
         let dt = this.directiveTypes.get(directive.type);
     	if(dt === undefined){
     		throw Error.handle('notexist1',nodom.words.directiveType,name);
     	}
-    	return dt.init(directive,dom,module);
+    	return dt.init(directive,dom,module,el);
     }
 
 	/**
      * 执行指令
-     * @param directive     指令
+     * @param directiveId   指令
      * @param dom           虚拟dom
      * @param module        模块
      * @param parent        父dom
 	 */
 	static exec(directive,dom,module,parent){
-		if(!this.directiveTypes.has(directive.type)){
+		let args = arguments;
+
+        // let directive = module.directiveFactory.get(directiveId);
+        args[0] = directive;
+        if(!this.directiveTypes.has(directive.type)){
 			throw Error.handle('notexist1',nodom.words.directiveType,type);
 		}
+
 		//调用
-		return nodom.apply(this.directiveTypes.get(directive.type).handle,null,arguments);
+		return nodom.apply(this.directiveTypes.get(directive.type).handle,null,args);
 	}
 
 	

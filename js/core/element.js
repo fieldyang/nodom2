@@ -2,9 +2,8 @@
  * element class 虚拟dom element
  */
 class Element{
-	constructor(){
+	constructor(tag){
 		const me = this;
-		me.className = 'Element';
 		me.directives = [];
 		me.props = {};				//属性集合
 		me.events = {};				//事件集合
@@ -13,7 +12,7 @@ class Element{
 		me.removeProps = []; 		//待删除属性
 		me.children = [];			//子element
 		me.parentKey = undefined;	//父对象key
-		me.tagName = undefined;		//元素名
+		me.tagName = tag||undefined;//标签
 		me.dontRender = false; 		//不渲染标志，不渲染到html
 		me.key = nodom.genId();
 	}
@@ -127,7 +126,11 @@ class Element{
 				}
 				//修改属性
 				params.changeProps.forEach((p)=>{
-					el.setAttribute(p.p,p.v);
+					if(el.tagName === 'INPUT' && p.p==='value'){  //文本框单独处理
+						el.value = p.v;
+					}else{
+						el.setAttribute(p.p,p.v);	
+					}
 				});
 				break;
 			case 'rep': 	//替换节点
@@ -252,7 +255,7 @@ class Element{
 		if(me.dontRender){
 			return false;
 		}
-		let dirs = me.directives;
+		const dirs = me.directives;
 		for(let i=0;i<dirs.length && !me.dontRender;i++){
 			DirectiveManager.exec(dirs[i],me,module,parent);
 		}
@@ -389,6 +392,13 @@ class Element{
 		}
 	}
 
+	/**
+	 * 添加子节点
+     * @param dom 	子节点
+	 */
+	add(dom){
+		me.children.push(dom);
+	}
 	/**
 	 * 从虚拟dom树和html dom树删除自己
 	 * @param module 	模块
@@ -544,7 +554,6 @@ class Element{
 						re.changeProps.push({p:p,v:me.props[p]});
 					}
 				});
-				
 				if(re.changeProps.length>0 || re.removeProps.length>0){
 					change = true;
 					re.type = 'upd';

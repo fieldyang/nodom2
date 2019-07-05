@@ -53,7 +53,7 @@ class Compiler {
                     let v = attr.value.trim();
                     if(attr.name.startsWith('x-')){         //指令
                         //添加到dom指令集
-                        oe.directives.push(new Directive(attr.name.substr(2),v,oe,module));
+                        oe.directives.push(new Directive(attr.name.substr(2),v,oe,module,ele));
                     }else if(attr.name.startsWith('e-')){    //事件
                         let en = attr.name.substr(2);
                         oe.events[en] = new Event(en,attr.value.trim());
@@ -118,9 +118,9 @@ class Compiler {
             return exprStr;
         }
         let retA = new Array();
-        let re,oIndex=0;
         let ite = exprStr.matchAll(/\{\{.+?\}\}/g);
-        for (const re of ite) {
+        let re,oIndex=0;
+        for (re of ite) {
             let ind = re.index;
             //字符串
             if(ind>oIndex){
@@ -135,22 +135,10 @@ class Compiler {
             retA.push(exp.id);
             oIndex = ind + re[0].length;
         }
+        //最后的字符串
+        if(re && re.index + re[0].length < exprStr.length-1){
+            retA.push(exprStr.substr(re.index + re[0].length));
+        }
         return retA;
     }
-
-    static compileEvent(){
-
-    }
-
-    /**
-     * 处理指令
-     * @param dirName   指令名
-     * @param value     指令值
-     */
-    /*static compileDirective(type,value){
-        //实例化指令对象
-        return new Directive(type,value); 
-        //directives.push(di);
-        //return di;
-    }*/
 }

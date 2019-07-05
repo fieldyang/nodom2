@@ -7,12 +7,13 @@ class Filter{
 	 * @param src 		源串，或explain后的数组
 	 */
 	constructor(src){
-		this.className = 'Filter';
 		if(nodom.isString(src)){
 			src = FilterManager.explain(src);
 		}
-		this.type = src[0];
-		this.params = src.slice(1);
+		if(src){
+			this.type = src[0];
+			this.params = src.slice(1);	
+		}
 	}
 
 	/**

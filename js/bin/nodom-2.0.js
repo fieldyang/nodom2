@@ -849,13 +849,21 @@ class Class{
 	/**
 	 * 创建实例(对象)
 	 * @param clsName 	类名
-	 * @param 
+	 * @param params 	参数数组
 	 * @return 			根据类创建的实例
 	 */
-	static newInstance(clsName,config){
+	static newInstance(clsName,params){
 		let cls = this.items.get(clsName);
-		if(cls === undefined){}
-		return Reflect.construct(cls);
+		if(cls === undefined){
+			return null;
+		}
+		return Reflect.construct(cls,params||[]);
+	}
+
+	static getClassName(obj){
+		if(obj.constructor){
+			return obj.constructor.name;	
+		}
 	}
 }
 
@@ -1017,28 +1025,28 @@ class Factory{
 			this.moduleName = module.name;
 		}
 		//容器map
-		this.items = new Map();
+		this.items = Object.create(null);
 	}
 
 	/**
 	 * 添加到工厂
 	 */
 	add(name,item){
-		this.items.set(name,item);
+		this.items[name] = item;
 	}
 
 	/**
 	 * 获得item
 	 */
 	get(name){
-		return this.items.get(name);
+		return this.items[name];
 	}
 
  	/**
  	 * 从容器移除
  	 */
 	remove(name){
-		this.items.delete(name);
+		delete this.items[name];
 	}
 
 	
@@ -1173,7 +1181,7 @@ class Compiler {
                     let v = attr.value.trim();
                     if(attr.name.startsWith('x-')){         //指令
                         //添加到dom指令集
-                        oe.directives.push(new Directive(attr.name.substr(2),v,oe,module));
+                        oe.directives.push(new Directive(attr.name.substr(2),v,oe,module,ele));
                     }else if(attr.name.startsWith('e-')){    //事件
                         let en = attr.name.substr(2);
                         oe.events[en] = new Event(en,attr.value.trim());
@@ -1238,9 +1246,9 @@ class Compiler {
             return exprStr;
         }
         let retA = new Array();
-        let re,oIndex=0;
         let ite = exprStr.matchAll(/\{\{.+?\}\}/g);
-        for (const re of ite) {
+        let re,oIndex=0;
+        for (re of ite) {
             let ind = re.index;
             //字符串
             if(ind>oIndex){
@@ -1255,24 +1263,12 @@ class Compiler {
             retA.push(exp.id);
             oIndex = ind + re[0].length;
         }
+        //最后的字符串
+        if(re && re.index + re[0].length < exprStr.length-1){
+            retA.push(exprStr.substr(re.index + re[0].length));
+        }
         return retA;
     }
-
-    static compileEvent(){
-
-    }
-
-    /**
-     * 处理指令
-     * @param dirName   指令名
-     * @param value     指令值
-     */
-    /*static compileDirective(type,value){
-        //实例化指令对象
-        return new Directive(type,value); 
-        //directives.push(di);
-        //return di;
-    }*/
 }
 
 class Renderer{
@@ -1541,7 +1537,6 @@ class Expression{
 				sTmp += c;
 			}
         }
-
         if(type === 2){ //变量处理
 			me.addVar(sTmp,stack);
 		}else if(type === 0 && sTmp !== ''){  //字符串
@@ -1550,7 +1545,6 @@ class Expression{
 			//抛出表达式错误
 			throw Error.handle('invoke','expression',0,'Node');
 		}
-
         return stack;
     }    
 
@@ -1756,13 +1750,15 @@ class Expression{
 					// 作为前一轮已经计算
 					value = module.expressionFactory.get(item.val).val(fieldObj,modelId);
 					value = item.filter.exec(value,module);
-					if(nodom.isString(value) && value !== ''){
-						value = nodom.addStrQuot(value);
-						retStr += value;
-					}else if(typeof value === 'object'){  //对象，直接赋值，不做加法
+					if(typeof value === 'object'){  //对象，直接赋值，不做加法
 						retStr = value;
-					}
-					break;
+					}else{
+						//字符串
+						if(nodom.isString(value) && value !== ''){
+							value = nodom.addStrQuot(value);
+						}
+						retStr += value;
+					} 
 			}
 			
 		});
@@ -1816,9 +1812,8 @@ class Expression{
  * element class 虚拟dom element
  */
 class Element{
-	constructor(){
+	constructor(tag){
 		const me = this;
-		me.className = 'Element';
 		me.directives = [];
 		me.props = {};				//属性集合
 		me.events = {};				//事件集合
@@ -1827,7 +1822,7 @@ class Element{
 		me.removeProps = []; 		//待删除属性
 		me.children = [];			//子element
 		me.parentKey = undefined;	//父对象key
-		me.tagName = undefined;		//元素名
+		me.tagName = tag||undefined;//标签
 		me.dontRender = false; 		//不渲染标志，不渲染到html
 		me.key = nodom.genId();
 	}
@@ -1941,7 +1936,11 @@ class Element{
 				}
 				//修改属性
 				params.changeProps.forEach((p)=>{
-					el.setAttribute(p.p,p.v);
+					if(el.tagName === 'INPUT' && p.p==='value'){  //文本框单独处理
+						el.value = p.v;
+					}else{
+						el.setAttribute(p.p,p.v);	
+					}
 				});
 				break;
 			case 'rep': 	//替换节点
@@ -2066,7 +2065,7 @@ class Element{
 		if(me.dontRender){
 			return false;
 		}
-		let dirs = me.directives;
+		const dirs = me.directives;
 		for(let i=0;i<dirs.length && !me.dontRender;i++){
 			DirectiveManager.exec(dirs[i],me,module,parent);
 		}
@@ -2203,6 +2202,13 @@ class Element{
 		}
 	}
 
+	/**
+	 * 添加子节点
+     * @param dom 	子节点
+	 */
+	add(dom){
+		me.children.push(dom);
+	}
 	/**
 	 * 从虚拟dom树和html dom树删除自己
 	 * @param module 	模块
@@ -2358,7 +2364,6 @@ class Element{
 						re.changeProps.push({p:p,v:me.props[p]});
 					}
 				});
-				
 				if(re.changeProps.length>0 || re.removeProps.length>0){
 					change = true;
 					re.type = 'upd';
@@ -2474,7 +2479,7 @@ class Event{
                 }else{              //事件附加参数
                     me[item] = true;
                 }
-            });    
+            });
         }
         //触屏事件根据设备类型进行处理
         if(nodom.config.deviceType === 1){
@@ -2498,30 +2503,32 @@ class Event{
 
     /**
      * 事件触发
-     * @param model     模型
      * @param e         事件
-     * @param view      事件element
-     * @param module    模块
      */
     fire(e){
         const me = this;
-        let model = me.module.modelFactory.get(me.virtualDom.modelId);
+        const module = ModuleFactory.get(me.moduleName);
+        const dom = module.renderTree.query(me.domKey);
+        const el = module.container.querySelector("[key='" + me.domKey + "']");
+        const model = module.modelFactory.get(dom.modelId);
         //如果capture为true，则先执行自有事件，再执行代理事件，否则反之
         if(me.capture){
-            handleSelf(e,model);
-            handleDelg(e,model);
+            handleSelf(e,model,module,el);
+            handleDelg(e,model,module,el);
         }else{
-            if(handleDelg(e,model)){
-                handleSelf(e,model);
+            if(handleDelg(e,model,module,el)){
+                handleSelf(e,model,module,el);
             }
         }
 
         //判断是否清除事件
         if(me.events !== undefined && me.events[me.name].length === 0 && me.handler === undefined){
             if(ExternalEvent.TouchEvents[me.name]){
-                ExternalEvent.unregist(me);
+                ExternalEvent.unregist(me,el);
             }else{
-                me.el.removeEventListener(me.name,me.handleEvent);    
+                if(el !== null){
+                    el.removeEventListener(me.name,me.handleEvent); 
+                }
             }
         }
 
@@ -2529,10 +2536,10 @@ class Event{
          * 处理自有事件
          * @param model     模型
          * @param e         事件
-         * @param view      事件element
          * @param module    模块
+         * @param el        事件element
          */
-        function handleDelg(e,model){
+        function handleDelg(e,model,module,el){
             //代理事件执行
             if(me.events === undefined){
                 return true;
@@ -2566,18 +2573,18 @@ class Event{
          * 处理自有事件
          * @param model     模型
          * @param e         事件
-         * @param view      事件element
          * @param module    模块
+         * @param el        事件element
          */
-        function handleSelf(e,model){
-            let foo = me.module.methodFactory.get(me.handler);
+        function handleSelf(e,model,module,el){
+            let foo = module.methodFactory.get(me.handler);
             //自有事件
             if(nodom.isFunction(foo)){
                 //禁止冒泡
                 if(me.nopopo){
                     e.stopPropagation();
                 }
-                nodom.apply(foo,model,[e,me.module,me.el,me.virtualDom]);
+                nodom.apply(foo,model,[e,module,el,dom]);
                 //事件只执行一次，则删除handler
                 if(me.once){  
                     delete me.handler;
@@ -2588,18 +2595,18 @@ class Event{
         
     /**
      * 绑定事件
-     * @param view      element
-     * @param model     view模型
      * @param module    模块
+     * @param vdom      虚拟dom
+     * @param el        element
+     
      */
     bind(module,vdom,el){
         const me = this;
-        me.virtualDom = vdom;
-        me.el = el;
-        me.module = module;
+        me.domKey = vdom.key;
+        me.moduleName = module.name;
         //触屏事件
         if(ExternalEvent.TouchEvents[me.name]){
-            ExternalEvent.regist(me);
+            ExternalEvent.regist(me,el);
         }else{
             me.handleEvent = function(e){
                 me.fire(e);
@@ -2618,9 +2625,8 @@ class Event{
      */
     delegateTo(module,vdom,el,parent,parentEl){
         const me = this;
-        me.virtualDom = vdom;
-        me.el = el;
-        me.module = module;
+        me.domKey = vdom.key;
+        me.moduleName = module.name;
 
         //如果不存在父对象，则用body
         if(!parentEl){
@@ -2691,12 +2697,18 @@ class ExternalEvent{
      * 注册事件
      * @param evtObj    event对象
      */
-    static regist(evtObj){
+    static regist(evtObj,el){
         let evt = ExternalEvent.TouchEvents[evtObj.name];
         //如果绑定了，需要解绑
         if(!nodom.isEmpty(evtObj.touchListeners)){
             ExternalEvent.unregist(evtObj);
         }
+        
+        if(!el){
+            const module = ModuleFactory.get(evtObj.moduleName);
+            el = module.container.querySelector("[key='" + evtObj.domKey + "']");    
+        }
+        // el不存在
         evtObj.touchListeners = {};
         if(evt){
             // 绑定事件组
@@ -2706,7 +2718,9 @@ class ExternalEvent{
                     evt[ev](e,evtObj);
                 }
                 //绑定事件
-                evtObj.el.addEventListener(ev,evtObj.touchListeners[ev],evtObj.capture);
+                if(el !== null){
+                    el.addEventListener(ev,evtObj.touchListeners[ev],evtObj.capture);    
+                }
             });
         }
     }
@@ -2715,13 +2729,19 @@ class ExternalEvent{
      * 取消已注册事件
      * @param evtObj    event对象
      */
-    static unregist(evtObj){
+    static unregist(evtObj,el){
         let evt = nodom.Event.TouchEvents[evtObj.eventName];
+        if(!el){
+            const module = ModuleFactory.get(evtObj.moduleName);
+            el = module.container.querySelector("[key='" + evtObj.domKey + "']");    
+        }
         if(evt){
             // 解绑事件
-            nodom.getOwnProps(evtObj.touchListeners).forEach(function(ev){
-                evtObj.view.removeEventListener(ev,evtObj.touchListeners[ev]);
-            });
+            if(el !== null){
+                nodom.getOwnProps(evtObj.touchListeners).forEach(function(ev){
+                    el.removeEventListener(ev,evtObj.touchListeners[ev]);
+                });    
+            }
         }  
     }
 
@@ -2923,7 +2943,6 @@ class ModelFactory extends Factory{}
 class Model{
 	constructor(data,module){
 		const me = this;
-		me.className = 'Model';
 		me.data = data;
 		me.fields = {};
 		// modelId
@@ -3136,12 +3155,13 @@ class Filter{
 	 * @param src 		源串，或explain后的数组
 	 */
 	constructor(src){
-		this.className = 'Filter';
 		if(nodom.isString(src)){
 			src = FilterManager.explain(src);
 		}
-		this.type = src[0];
-		this.params = src.slice(1);
+		if(src){
+			this.type = src[0];
+			this.params = src.slice(1);	
+		}
 	}
 
 	/**
@@ -3206,27 +3226,32 @@ class DirectiveManager{
     /**
      * 指令初始化
      */
-    static init(directive,dom,module){
+    static init(directive,dom,module,el){
         let dt = this.directiveTypes.get(directive.type);
     	if(dt === undefined){
     		throw Error.handle('notexist1',nodom.words.directiveType,name);
     	}
-    	return dt.init(directive,dom,module);
+    	return dt.init(directive,dom,module,el);
     }
 
 	/**
      * 执行指令
-     * @param directive     指令
+     * @param directiveId   指令
      * @param dom           虚拟dom
      * @param module        模块
      * @param parent        父dom
 	 */
 	static exec(directive,dom,module,parent){
-		if(!this.directiveTypes.has(directive.type)){
+		let args = arguments;
+
+        // let directive = module.directiveFactory.get(directiveId);
+        args[0] = directive;
+        if(!this.directiveTypes.has(directive.type)){
 			throw Error.handle('notexist1',nodom.words.directiveType,type);
 		}
+
 		//调用
-		return nodom.apply(this.directiveTypes.get(directive.type).handle,null,arguments);
+		return nodom.apply(this.directiveTypes.get(directive.type).handle,null,args);
 	}
 
 	
@@ -3246,19 +3271,20 @@ class Directive{
 	 * @param type  	类型
 	 * @param value 	指令值
 	 * @param vdom 		虚拟dom
+	 * @param module 	模块	
 	 */
 	constructor(type,value,vdom,module){
-		this.className = 'Directive';
-		this.type = type;
-		
-		if(value !== undefined){
-			this.value = value.trim();
+		const me = this;
+		me.type = type;
+		// console.log(type,value);
+		if(nodom.isString(value)){
+			me.value = value.trim();
+		}
+		if(type !== undefined){
+			nodom.apply(DirectiveManager.init,DirectiveManager,[me,vdom,module]);
 		}
 
-		if(type !== undefined){
-			nodom.apply(DirectiveManager.init,DirectiveManager,[this,vdom,module]);
-		}
-		this.id = nodom.genId();
+		me.id = nodom.genId();
 	}
 
 	/**
@@ -3279,7 +3305,6 @@ class Module{
 	constructor(config){
 		const me = this;
 		me.id = nodom.genId();
-		me.className = 'Module';
 		me.firstRender = true;	//是否是首次渲染
 		me.rendered = false;
 		me.virtualDom = undefined; 			//原始虚拟dom
@@ -3305,7 +3330,6 @@ class Module{
 		
 		me.methodFactory = new MethodFactory(me);
 		me.modelFactory = new ModelFactory(me);
-		
 		me.expressionFactory = new ExpressionFactory(me);
 		me.directiveFactory = new DirectiveFactory(me);
 		me.renderDoms = [];			//修改渲染的el数组
@@ -3410,9 +3434,9 @@ class Module{
     	}else if(config.templateUrl){ //模版文件
     		typeArr.push('template');
     		urlArr.push(appPath + config.templateUrl);
-    	}else if(config.compiledJson){ //编译后的json串
+    	}else if(config.compiledTemplate){ //编译后的json串
     		typeArr.push('compiled');
-    		urlArr.push(appPath + config.compiledJson);
+    		urlArr.push(appPath + config.compiledTemplate);
     	}
     	
     	//如果已存在templateStr，则直接编译
@@ -3448,7 +3472,9 @@ class Module{
 	    					me.virtualDom = Compiler.compile(me,file.trim());
 	    					break;
 	    				case 'compiled': //预编译后的js文件
-
+	    					let arr = Serializer.deserialize(file,me);
+	    					me.virtualDom = arr[0];
+	    					me.expressionFactory = arr[1];
 	    					break;
 	    				case 'data': 	//数据
 	    					me.model = new Model(JSON.parse(file),me);
@@ -4548,6 +4574,151 @@ DirectiveManager.addType('router',{
 });
 
 /**
+ *  编译器
+ *  描述：用于进行预编译和预编译后的json串反序列化，处理两个部分：虚拟dom树和表达式工厂
+ */
+
+class Serializer{
+
+	/**
+	 * 序列化，只序列化 virtualDom、expressionFactory
+	 * @param module 	模块
+	 * @return   		jsonstring
+	 */
+	static serialize(module){
+		let props = ['virtualDom','expressionFactory'];
+		let jsonStr = '[';
+
+		props.forEach((p,i)=>{
+			addClsName(module[p]);
+			let s = JSON.stringify(module[p]);
+			jsonStr += s;
+			if(i<props.length-1){
+				jsonStr += ',';
+			}else{
+				jsonStr += ']'
+			}
+		});
+		
+		return jsonStr;
+
+		/**
+		 * 为对象添加class name（递归执行）
+		 * @param obj 	对象
+		 */
+		function addClsName(obj){
+			if(typeof obj !== 'object'){
+				return;
+			}
+
+			let cls = Class.getClassName(obj);
+
+			if(cls && Class.getClass(cls)){
+				obj.className = cls;		
+			}
+
+			nodom.getOwnProps(obj).forEach((item)=>{
+				if(nodom.isArray(obj[item])){
+					//删除空数组
+					if(obj[item].length === 0){
+						delete obj[item];
+					}else{
+						obj[item].forEach((item1)=>{
+							addClsName(item1);
+						});	
+					}
+				}else if(typeof obj[item] === 'object'){
+					//删除空对象
+					if(nodom.isEmpty(obj[item])){
+						delete obj[item];
+					}else{
+						addClsName(obj[item]);	
+					}
+				}
+			});
+		}
+	}
+
+
+	/**
+	 * 反序列化
+	 * @param jsonStr 		json串
+	 * @param module 		模块
+	 * @return [virtualDom,expressionFactory]	
+	 */
+	static deserialize(jsonStr,module){
+		let jsonArr = JSON.parse(jsonStr);
+		
+		let arr = [];
+		let vdom; //虚拟dom
+		jsonArr.forEach((item)=>{
+			arr.push(handleCls(item));
+		});
+
+		return arr;
+
+		function handleCls(jsonObj){
+			if(!nodom.isObject(jsonObj)){
+				return jsonObj;
+			}
+
+			if(jsonObj.moduleName){
+				jsonObj.moduleName = module.name;
+			}
+
+			let retObj;
+			if(jsonObj.hasOwnProperty('className')){
+				const cls = jsonObj['className'];
+				let param = [];
+				//指令需要传入参数
+				if(cls === 'Directive'){
+					param = [jsonObj['type'],jsonObj['value'],vdom,module];
+				}
+
+				retObj = Class.newInstance(cls,param);
+				if(cls === 'Element'){
+					vdom = retObj;
+				}
+				
+			}else{
+				retObj = {};
+			}
+
+			//子对象可能用到父对象属性，所以子对象要在属性赋值后处理
+			let objArr = [];  //子对象
+			let arrArr = [];  //子数组
+			nodom.getOwnProps(jsonObj).forEach((item)=>{
+				//子对象
+				if(nodom.isObject(jsonObj[item])){
+					objArr.push(item);
+				}else if(nodom.isArray(jsonObj[item])){ //子数组
+					arrArr.push(item);
+				}else{  //普通属性
+					if(item !== 'className'){
+						retObj[item] = jsonObj[item];	
+					}
+				}
+			});
+
+			//子对象处理
+			objArr.forEach((item)=>{
+				retObj[item] = handleCls(jsonObj[item]);
+			});
+
+			//子数组处理
+			arrArr.forEach(item=>{
+				retObj[item] = [];
+				jsonObj[item].forEach((item1)=>{
+					retObj[item].push(handleCls(item1));
+				});
+			});
+			return retObj;
+		}
+	}
+
+}
+
+/**
  * filter类型命名规则：以小写字母a-z命名，其它字母不允许
  */
 class FilterManager{
@@ -4670,42 +4841,33 @@ FilterManager.filterTypes = new Map();
 FilterManager.cantEditTypes = ['date','currency','number','tolowercase','touppercase','orderBy','filter'];
 
         
-
 /**
- * 指令名 model
- * 描述：模型
- */
-
-/**
- *    每个指令类型都有一个init和handle方法，init和handle都可选
- *    init 方法在编译时执行，包含一个参数 directive 指令，无返回
- *    handle方法在渲染时执行，包含三个参数 directive 指令  vdom 虚拟dom  parent父对象(可选)
- *    return true/false false则不进行后面的所有渲染工作
+ *  指令类型初始化    
+ *  每个指令类型都有一个init和handle方法，init和handle都可选
+ *  init 方法在编译时执行，包含一个参数 directive(指令)、dom(虚拟dom)、module(模块)，无返回
+ *  handle方法在渲染时执行，包含三个参数 directive(指令)、dom(虚拟dom)、module(模块)、parent(父虚拟dom)
+ *  return true/false false则不进行后面的所有渲染工作
  */ 
 
 DirectiveManager.addType('model',{
     prio:1,
     init:(directive,dom,module)=>{
         let value = directive.value;
-
-        if(nodom.isEmpty(value)){
-            throw Error.handle("paramException","x-model");
-        }
-        
         //处理以.分割的字段，没有就是一个
-        let arr = new Array();
-        value.split('.').forEach((item)=>{  
-            let ind1 = -1,ind2 = -1;
-            if((ind1 = item.indexOf('[')) !== -1 && (ind2 = item.indexOf(']')) !== -1){ //数组
-                let fn = item.substr(0,ind1);
-                let index = item.substring(ind1+1,ind2);
-                arr.push(fn + ',' + index);
-            }else{ //普通字符串
-                arr.push(item);
-            }
-        });
-        directive.value = arr;
-
+        if(nodom.isString(value)){
+            let arr = new Array();
+            value.split('.').forEach((item)=>{  
+                let ind1 = -1,ind2 = -1;
+                if((ind1 = item.indexOf('[')) !== -1 && (ind2 = item.indexOf(']')) !== -1){ //数组
+                    let fn = item.substr(0,ind1);
+                    let index = item.substring(ind1+1,ind2);
+                    arr.push(fn + ',' + index);
+                }else{ //普通字符串
+                    arr.push(item);
+                }
+            });
+            directive.value = arr;    
+        }
     },
 
     handle:(directive,dom,module,parent)=>{
@@ -4755,20 +4917,19 @@ DirectiveManager.addType('repeat',{
         }
 
         // 增加model指令
-        let dir1 = new Directive('model',modelName,dom);
-        dom.directives.unshift(dir1);
+        if(!dom.hasDirective('mocel')){
+            dom.directives.push(new Directive('model',modelName,dom,module));    
+        }
+        
         directive.value = modelName;
     },
     handle:(directive,dom,module,parent)=>{
-        let modelFac = module.modelFactory;
-
+        const modelFac = module.modelFactory;
         let rows = modelFac.get(dom.modelId).data;
-
         //有过滤器，处理数据集合
         if(directive.filter !== undefined){
             rows = directive.filter.exec(rows,module);
         }
-        
 
         // 无数据，不渲染
         if(rows === undefined || rows.length === 0){
@@ -4791,7 +4952,6 @@ DirectiveManager.addType('repeat',{
             rows[i].$index = i;
             chds.push(node);     
         }
-        
 
         //找到并追加到dom后
         if(chds.length > 0){
@@ -4806,7 +4966,6 @@ DirectiveManager.addType('repeat',{
         
         // 不渲染该节点
         dom.dontRender = true;
-        // return true;
         return false;
 
         function setKey(node,key,id){
@@ -4906,17 +5065,16 @@ DirectiveManager.addType('show',{
         // 获取style属性数组
         let arr = dom.style?dom.style.split(';'):[];
         let find = false;
-        let show = v && v !== 'false'? 'visible':'hidden';
-        
+        let show = v && v !== 'false'? 'block':'none';
         for(let i=0;i<arr.length;i++){
-            if(arr[i].indexOf('visibility')){
+            if(arr[i].indexOf('display:') === -1){
                 find = true;
-                arr[i] = 'visibility:' + show;
+                arr[i] = 'display:' + show;
                 break;
             }
         }
         if(!find){
-            arr.push('visibility:' + show);
+            arr.push('display:' + show);
         }
         //组合style属性
         dom.props['style'] = arr.join(';');
@@ -4992,20 +5150,8 @@ DirectiveManager.addType('field',{
             eventName = 'change';
         }
 
-        // if(dom.props.hasOwnProperty('name')){
-          dom.props['name'] = field;
-        // }
-
-        //增加name和value属性，属性可能在后面，需要延迟处理
-        setTimeout(()=>{
-            //增加name属性
-            
-            //增加value属性
-            if(!dom.exprProps.hasOwnProperty('value') && !dom.props.hasOwnProperty('value')){
-                dom.exprProps['value'] = new Expression(field,module);
-            }    
-        },0);
-        
+        //增加name属性
+        dom.props['name'] = field;
 
         //增加自定义方法
         let method = '$nodomGenMethod' + nodom.genId();
@@ -5038,18 +5184,22 @@ DirectiveManager.addType('field',{
         );
         //追加事件
         dom.events[eventName] = new Event(eventName,method);
+
+        //增加value属性，属性可能在后面，需要延迟处理
+        setTimeout(()=>{
+            //增加value属性
+            if(!dom.exprProps.hasOwnProperty('value') && !dom.props.hasOwnProperty('value')){
+                dom.exprProps['value'] = new Expression(field,module);
+            }    
+        },0);
+        
     },
 
     handle:(directive,dom,module,parent)=>{
-        let type = dom.props['type'];
-        let tgname = dom.tagName.toLowerCase();
-
-        if(type !== 'radio' && type !== 'checkbox' && tgname !== 'select'){
-            return;
-        }
-
-        let model = module.modelFactory.get(dom.modelId);
-        let dataValue = model.data[directive.value];
+        const type = dom.props['type'];
+        const tgname = dom.tagName.toLowerCase();
+        const model = module.modelFactory.get(dom.modelId);
+        const dataValue = model.data[directive.value];
         let value = dom.props['value'];
             
         if(type === 'radio'){
@@ -5122,6 +5272,7 @@ DirectiveManager.addType('field',{
 
         },0);
 
+        //添加focus和blur事件
         module.addFirstRenderOperation(function(){
             const m = this;
             const el = module.container.querySelector("[name='" + directive.value + "']");
@@ -5139,6 +5290,7 @@ DirectiveManager.addType('field',{
     
     handle:(directive,dom,module,parent)=>{
         const el = module.container.querySelector("[name='" + directive.value + "']");
+        
         if(!el || !el.canBeValid){
             dom.dontRender = true;
             return;
@@ -5260,11 +5412,7 @@ FilterManager.addType('date',(value,param)=>{
  * 转换为货币
  * @param sign  货币符号¥ $ 等，默认 ¥
  */
-FilterManager.addType('currency',(value,param)=>{
-    let sign;
-    if(nodom.isArray(param)){
-        sign = param[0];
-    }
+FilterManager.addType('currency',(value,sign)=>{
     if(isNaN(value)){
         return '';
     }
@@ -5282,7 +5430,8 @@ FilterManager.addType('currency',(value,param)=>{
  * @param digits    小数点后位数
  */
 FilterManager.addType('number',(value,param)=>{
-    let digits = param ||0;
+    let digits = param || 0;
+
     if(isNaN(value) || digits < 0){
         return '';
     }
@@ -5294,7 +5443,7 @@ FilterManager.addType('number',(value,param)=>{
     for(let i=0;i<digits;i++){
         x*=10;
     }
-    return (value * x + 0.5 | 0) / x;
+    return ((value * x + 0.5) | 0) / x;
 });
 
 /**
@@ -5542,9 +5691,15 @@ Class.add('Expression',Expression);
 Class.add('Element',Element);
 Class.add('Module',Module);
 Class.add('Model',Model);
+Class.add('Event',Event);
+Class.add('Route',Route);
 Class.add('DirectiveFactory',DirectiveFactory);
 Class.add('ExpressionFactory',ExpressionFactory);
-Class.add('Route',Route);
+Class.add('MethodFactory',MethodFactory);
+Class.add('MessageFactory',MessageFactory);
+Class.add('ModelFactory',ModelFactory);
+Class.add('ModuleFactory',ModuleFactory);
+
 
 /**
  * 暴露方法集

@@ -158,7 +158,6 @@ class Expression{
 				sTmp += c;
 			}
         }
-
         if(type === 2){ //变量处理
 			me.addVar(sTmp,stack);
 		}else if(type === 0 && sTmp !== ''){  //字符串
@@ -167,7 +166,6 @@ class Expression{
 			//抛出表达式错误
 			throw Error.handle('invoke','expression',0,'Node');
 		}
-
         return stack;
     }    
 
@@ -373,13 +371,15 @@ class Expression{
 					// 作为前一轮已经计算
 					value = module.expressionFactory.get(item.val).val(fieldObj,modelId);
 					value = item.filter.exec(value,module);
-					if(nodom.isString(value) && value !== ''){
-						value = nodom.addStrQuot(value);
-						retStr += value;
-					}else if(typeof value === 'object'){  //对象，直接赋值，不做加法
+					if(typeof value === 'object'){  //对象，直接赋值，不做加法
 						retStr = value;
-					}
-					break;
+					}else{
+						//字符串
+						if(nodom.isString(value) && value !== ''){
+							value = nodom.addStrQuot(value);
+						}
+						retStr += value;
+					} 
 			}
 			
 		});
