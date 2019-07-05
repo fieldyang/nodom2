@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>index</title>
+    <script src='../../js/bin/nodom-2.0.js'></script>
+
+    <style>
+        p {
+            margin-left: 20px;
+            line-height: 12px;
+        }
+
+        .title {
+            margin: 20px auto;
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .introduction,
+        .examples {
+            margin: 20px auto;
+            color: #666666;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="code">
+        <div class="title">Nodom.JS</div>
+        <div class="introduction">
+            Nodom是一个前端MVVM框架，与2017年发布1.0版本，经过几个webapp开发后，综合使用过程中的问题，现升级为2.0，用ES6进行了重新架构，主要区别如下：
+            <p>1.转json格式的虚拟dom;</p>
+            <p>2.class抽取；</p>
+            <p>3.增加工厂的使用；</p>
+            <p>4.简化view结构；</p>
+            <p>5.简化model结构；</p>
+            <p>6.取消插件，统一为自定义指令；</p>
+            <p>7.增加对象的序列化和反序列化，便于对象存储和还原，也会更好支持预编译功能；（实现中）</p>
+            <p>8.增加工作流引擎，降低页面间耦合度（实现中）。</p>
+            使用方式和Nodom1.0相似，取消了DD命名空间，全部改为Nodom
+        </div>
+        <div class="examples">
+            实例
+            <p><a href="filter.html">过滤器用法</a></p>
+            <p><a href="model.html">model用法</a></p>
+            <p><a href="repeat.html">repeat用法</a></p>
+            <p><a href="if_else.html">if/else用法</a></p>
+            <p><a href="class.html">class用法</a></p>
+            <p><a href="show.html">show指令用法</a></p>
+            <p><a href="field.html">field指令用法</a></p>
+            <p><a href="validity.html">validity指令用法</a></p>
+            <p><a href="route/route.html">route指令用法</a></p>
+        </div>
+    </div>
+</body>
+<script>
+    let mod = new Module({
+        el: '.code',
+        root: true,
+        data: {
+            commodities: [{
+                name: 'T恤',
+                price: 150,
+                discount: 0.9
+            }, {
+                name: '短裤',
+                price: '80',
+                discount: 0.75
+            }, {
+                name: '外套',
+                price: 200,
+                discount: 0.6
+            }]
+        }
+    });
+
+</script>
+
+</html>

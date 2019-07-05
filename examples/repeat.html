@@ -4,56 +4,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Document</title>
+    <title>repeat</title>
     <script src='../../js/bin/nodom-2.0.js'></script>
 
     <style>
         .code {
-            margin: 20px auto;
+            margin: 20px;
         }
 
         .tip {
             color: darkorange;
-        }
-
-        .red {
-            color: red;
-        }
-
-        .bold {
-            font-weight: bold;
         }
     </style>
 </head>
 
 <body>
     <div class="view">
+        <div class="tip">基本使用</div>
         <div class="code">
-            <div class="tip">基本使用</div>
             菜单：
             <div x-repeat="foods">
                 菜名：{{name}}，价格：{{price}}
             </div>
         </div>
+        <div class="tip">索引号的使用（编号从1开始）</div>
         <div class="code">
-            <div class="tip">索引号的使用（编号从1开始）</div>
             菜单：
             <div x-repeat="foods">
                 编号：{{$index}}，菜名：{{name}}，价格：{{price}}
             </div>
         </div>
+        <div class="tip">过滤器使用-显示奇数号的数据（编号从1开始）</div>
         <div class="code">
-            <div class="tip">过滤器使用-显示奇数号的数据（编号从1开始）</div>
             菜单：
             <div x-repeat="foods|select:odd">
                 菜名：{{name}}，价格：{{price}}
             </div>
         </div>
+        <div class="tip">过滤器使用-价格升序排序（编号从1开始）</div>
         <div class="code">
-            <div class="tip">过滤器使用-价格升序排序（编号从1开始）</div>
             菜单：
             <div x-repeat="foods|orderby:price">
                 编号：{{$index}}，菜名：{{name}}，价格：{{price}}
+            </div>
+        </div>
+        <div class="tip">使用数组外的数据，直接引用</div>
+        <div class="code">
+            会员折扣：{{discount*10}}折
+            <div x-repeat="foods">
+                菜名：{{name}}，价格：{{price}}，会员价：{{price*discount}}
             </div>
         </div>
     </div>
@@ -63,6 +62,7 @@
         el: '.view',
         root: true,
         data: {
+            discount: 0.9,
             foods: [{
                 name: '夫妻肺片',
                 price: 25

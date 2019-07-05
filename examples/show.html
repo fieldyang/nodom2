@@ -4,12 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Document</title>
+    <title>show</title>
     <script src='../../js/bin/nodom-2.0.js'></script>
 
     <style>
         .code {
-            margin: 20px auto;
+            margin: 20px;
         }
 
         .tip {
@@ -28,8 +28,8 @@
 
 <body>
     <div class="view">
+        <div class="tip">商品列表，如果discount存在且discount<0.8则显示折扣价 </div>
         <div class="code">
-            <div class="tip">商品列表，如果discount存在且discount<0.8则显示折扣价 </div>
             <div x-repeat='commodities'>
                 {{name}}的价格是{{price}}
                 <span class="red" x-show="discount && discount<0.8">，折扣价是{{discount*price}}

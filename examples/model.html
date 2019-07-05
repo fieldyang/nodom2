@@ -4,32 +4,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Document</title>
+    <title>model</title>
     <script src='../../js/bin/nodom-2.0.js'></script>
 
     <style>
         .code {
-            margin: 20px auto;
+            margin: 20px;
         }
 
         .tip {
             color: darkorange;
-        }
-
-        .red {
-            color: red;
-        }
-
-        .bold {
-            font-weight: bold;
         }
     </style>
 </head>
 
 <body>
     <div class="view">
+        <div class="tip">多层model</div>
         <div class="code">
-            <div class="tip">多层model</div>
             <div x-model="user">
                 顾客信息：
                 <div x-model="name">
@@ -38,8 +30,8 @@
                 </div>
             </div>
         </div>
+        <div class="tip">多层数据</div>
         <div class="code">
-            <div class="tip">多层数据</div>
             <div x-model="user.order.foods">
                 用户点单：
                 <div>第一道菜：{{food1.name}}，价格：{{food1.price|currency}}</div>
