@@ -1,156 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-	<title>Document</title>
-	<script src='../../js/bin/nodom-2.0.js'></script>
-	
-	<style>
-		.cls1,.colorimp{
-			color:red;
-		}
-		.cls2{
-			font-size:20pt;
-		}
-	</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>route</title>
+    <script type="text/javascript" src="../../js/bin/nodom-2.0.js"></script>
+
+    <style>
+        .cls1,
+        .colorimp {
+            color: red;
+        }
+
+        .cls2 {
+            font-size: 20pt;
+        }
+    </style>
 </head>
+
 <body>
-	<div>
-		<div>当前时间:{{date1|date:'yyyy/MM/dd'}}</div>
-		<a x-route='/router' x-class="{cls1:'page1'}" active='{{page1}}'>page1</a>
-		<!-- <a x-route='/page1' x-class="{cls1:'page1'}" active='{{page1}}'>page1</a>
+    <div>
+        <div>当前时间:{{date1|date:'yyyy/MM/dd'}}</div>
+        <a x-route='/router' x-class="{cls1:'page1'}" active='{{page1}}'>page1</a>
+        <!-- <a x-route='/page1' x-class="{cls1:'page1'}" active='{{page1}}'>page1</a>
 		&nbsp;&nbsp;
 		<a x-route='/page2' x-class="{cls1:'page2'}" active='{{page2}}'>page2</a>-->
-		<div x-router></div> 
-	</div>
-	
+        <div x-router></div>
+    </div>
+
 </body>
-	<script>
-		nodom.config.appPath = '/nodom2/examples/route/pages/';
-		nodom.config.routerPrePath = '/nodom2/route';
-		let mod = new Module({
-			name:'mainModule',
-			el:'div',
-			root:true,
-			data:{
-				page1:true,
-				page2:false,
-				date1:(new Date()).getTime(),
-				x:{
-					y:{
-						z:1
-					}
-				}
-			},
-			methods:{
-		
-			}
-		});
-		
-		
-		nodom.createModule([{
-			name:'tdir_router',
-			templateUrl:'/router/router.html',
-			data:{
-				routes:[
-					{title:'路由用法1-基本用法',path:'/router/directive/route1',active:true},
-					{title:'路由用法2-路由参数用法',path:'/router/directive/route2',active:false},
-					{title:'路由用法3-路由嵌套用法',path:'/router/route3',active:false}
-				]
-			},
-		    delayInit:true,
-		},{
-			name:'r_pmod1',
-			templateUrl:'router/router1.html',
-			data:{
-				home:true,
-				list:false,
-				data:false
-			}
-		},{
-			name:'r_pmod2',
-			templateUrl:'router/router2.html',
-			data:{
-				routes:[
-					{title:'首页',path:'/router/directive/route2/rparam/home/1',active:true},
-					{title:'列表',path:'/router/directive/route2/rparam/list/2',active:false},
-					{title:'数据',path:'/router/directive/route2/rparam/data/3',active:false}
-				]
-			}
-		},{
-			name:'r_pmod3',
-			templateUrl:'router/router3.html'
-		},{
-			name:'r_mod1',
-			template:"<div>这是首页,路径是{{$route.path}}</div>"
-		},{
-			name:'r_mod2',
-			template:"<div>这是商品列表页,路径是{{$route.path}}</div>"
-		},{
-			name:'r_mod3',
-			template:"<div>这是数据页,路径是{{$route.path}}</div>"
-		},{
-			name:'r_mod4',
-			template:"<div test='1'>这是{{$route.data.page}}页,编号是{{$route.data.id}}</div>"
-		},{
-			name:'r_mod5',
-			template:"<div class='code1'>路由r1加载的模块<dir x-router></div></div>"
-		},{
-			name:'r_mod6',
-			template:'路由r2加载的模块'
-		}]);
+<script>
+    nodom.config.appPath = '/examples/route/pages/';
+    nodom.config.routerPrePath = '/route';
+    let mod = new Module({
+        name: 'mainModule',
+        el: 'div',
+        root: true,
+        data: {
+            page1: true,
+            page2: false,
+            date1: (new Date()).getTime(),
+            x: {
+                y: {
+                    z: 1
+                }
+            }
+        },
+        methods: {
 
-		nodom.createRoute({
-			path:'/router',
-			module:'tdir_router',
-			routes:[
-				{
-					path:'/directive/route1',
-					module:'r_pmod1',
-					routes:[
-						{
-							path:'/home',
-							module:'r_mod1'
-						},{
-							path:'/list',
-							module:'r_mod2'
-						},{
-							path:'/data',
-							module:'r_mod3'
-						}
-					]
-				},{
-					path:'/directive/route2',
-					module:'r_pmod2',
-					onEnter:function(){
-						console.log('route2');
-					},
-					routes:[
-						{
-							path:'/rparam/:page/:id',
-							module:'r_mod4',
-							onEnter:function(){
-								console.log('route2/rparam');
-							}
-						}
-					]
-				},{
-					path:'/route3',
-					module:'r_pmod3',
-					routes:[{
-						path:'/r1',
- 						module:'r_mod5',
-						routes:[{
-							path:'/r2',
-							module:'r_mod6'
-						}]
-					}]
-				}
-			]
-		});
+        }
+    });
 
-		console.log(RouterTree.root);
-		
-	</script>
+
+    nodom.createModule([{
+        name: 'tdir_router',
+        templateUrl: '/router/router.html',
+        data: {
+            routes: [{
+                    title: '路由用法1-基本用法',
+                    path: '/router/directive/route1',
+                    active: false
+                },
+                {
+                    title: '路由用法2-路由参数用法',
+                    path: '/router/directive/route2',
+                    active: false
+                },
+                {
+                    title: '路由用法3-路由嵌套用法',
+                    path: '/router/route3',
+                    active: false
+                }
+            ]
+        },
+        delayInit: true,
+    }, {
+        name: 'r_pmod1',
+        templateUrl: 'router/router1.html',
+        data: {
+            home: true,
+            list: false,
+            data: false
+        }
+    }, {
+        name: 'r_pmod2',
+        templateUrl: 'router/router2.html',
+        data: {
+            routes: [{
+                    title: '首页',
+                    path: '/router/directive/route2/rparam/home/1',
+                    active: true
+                },
+                {
+                    title: '列表',
+                    path: '/router/directive/route2/rparam/list/2',
+                    active: false
+                },
+                {
+                    title: '数据',
+                    path: '/router/directive/route2/rparam/data/3',
+                    active: false
+                }
+            ]
+        }
+    }, {
+        name: 'r_pmod3',
+        templateUrl: 'router/router3.html'
+    }, {
+        name: 'r_mod1',
+        template: "<div>这是首页,路径是{{$route.path}}</div>"
+    }, {
+        name: 'r_mod2',
+        template: "<div>这是商品列表页,路径是{{$route.path}}</div>"
+    }, {
+        name: 'r_mod3',
+        template: "<div>这是数据页,路径是{{$route.path}}</div>"
+    }, {
+        name: 'r_mod4',
+        template: "<div test='1'>这是{{$route.data.page}}页,编号是{{$route.data.id}}</div>"
+    }, {
+        name: 'r_mod5',
+        template: "<div class='code1'>路由r1加载的模块<dir x-router></div></div>"
+    }, {
+        name: 'r_mod6',
+        template: '路由r2加载的模块'
+    }]);
+
+    nodom.createRoute({
+        path: '/router',
+        module: 'tdir_router',
+        routes: [{
+            path: '/directive/route1',
+            module: 'r_pmod1',
+            routes: [{
+                path: '/home',
+                module: 'r_mod1'
+            }, {
+                path: '/list',
+                module: 'r_mod2'
+            }, {
+                path: '/data',
+                module: 'r_mod3'
+            }]
+        }, {
+            path: '/directive/route2',
+            module: 'r_pmod2',
+            onEnter: function () {
+                console.log('route2');
+            },
+            routes: [{
+                path: '/rparam/:page/:id',
+                module: 'r_mod4',
+                onEnter: function () {
+                    console.log('route2/rparam');
+                }
+            }]
+        }, {
+            path: '/route3',
+            module: 'r_pmod3',
+            routes: [{
+                path: '/r1',
+                module: 'r_mod5',
+                routes: [{
+                    path: '/r2',
+                    module: 'r_mod6'
+                }]
+            }]
+        }]
+    });
+
+    console.log(RouterTree.root);
+</script>
+
 </html>
