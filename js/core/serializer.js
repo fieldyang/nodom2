@@ -96,10 +96,15 @@ class Serializer{
 				const cls = jsonObj['className'];
 				let param = [];
 				//指令需要传入参数
-				if(cls === 'Directive'){
-					param = [jsonObj['type'],jsonObj['value'],vdom,module];
+				switch(cls){
+					case 'Directive':
+						param = [jsonObj['type'],jsonObj['value'],vdom,module];
+						break;
+					case 'Event':
+						param = [jsonObj['name']];
+						break;
 				}
-
+				
 				retObj = Class.newInstance(cls,param);
 				if(cls === 'Element'){
 					vdom = retObj;

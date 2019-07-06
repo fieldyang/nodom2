@@ -84,6 +84,9 @@
 class nodom{
     //唯一主键
     static genId(){
+        if(this.generatedId === undefined){
+            this.generatedId = 1;
+        }
         return this.generatedId++;
     }
     
@@ -801,9 +804,4 @@ class nodom{
     static apply(foo,obj,args){
         return Reflect.apply(foo,obj,args);
     }
-    
 }
-
-//主键
-nodom.generatedId = 1;
-

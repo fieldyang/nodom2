@@ -84,6 +84,9 @@
 class nodom{
     //唯一主键
     static genId(){
+        if(this.generatedId === undefined){
+            this.generatedId = 1;
+        }
         return this.generatedId++;
     }
     
@@ -801,13 +804,7 @@ class nodom{
     static apply(foo,obj,args){
         return Reflect.apply(foo,obj,args);
     }
-    
 }
-
-//主键
-nodom.generatedId = 1;
-
-
 /**
  * 系统配置
  * 1.配置app路径
@@ -2482,7 +2479,7 @@ class Event{
             });
         }
         //触屏事件根据设备类型进行处理
-        if(nodom.config.deviceType === 1){
+        if(nodom.config.deviceType === 1){ //触屏设备
             switch(me.name){
                 case 'click':
                     me.name = 'tap';
@@ -2495,6 +2492,21 @@ class Event{
                     break;
                 case 'mousemove':
                     me.name = 'touchmove';
+                    break;
+            }
+        }else{  //转非触屏
+            switch(me.name){
+                case 'tap':
+                    me.name = 'click';
+                    break;
+                case 'touchstart':
+                    me.name = 'mousedown';
+                    break;
+                case 'touchend':
+                    me.name = 'mouseup';
+                    break;
+                case 'touchmove':
+                    me.name = 'mousemove';
                     break;
             }
         }
@@ -2606,7 +2618,7 @@ class Event{
         me.moduleName = module.name;
         //触屏事件
         if(ExternalEvent.TouchEvents[me.name]){
-            ExternalEvent.regist(me,el);
+            ExternalEvent.regist(me,el,module,vdom);
         }else{
             me.handleEvent = function(e){
                 me.fire(e);
@@ -2708,19 +2720,18 @@ class ExternalEvent{
             const module = ModuleFactory.get(evtObj.moduleName);
             el = module.container.querySelector("[key='" + evtObj.domKey + "']");    
         }
+
         // el不存在
         evtObj.touchListeners = {};
-        if(evt){
+        if(evt && el !== null){
+            // console.log(el);
             // 绑定事件组
             nodom.getOwnProps(evt).forEach(function(ev){
                 //先记录下事件，为之后释放
                 evtObj.touchListeners[ev] = function(e){
                     evt[ev](e,evtObj);
                 }
-                //绑定事件
-                if(el !== null){
-                    el.addEventListener(ev,evtObj.touchListeners[ev],evtObj.capture);    
-                }
+                el.addEventListener(ev,evtObj.touchListeners[ev],evtObj.capture);
             });
         }
     }
@@ -2733,7 +2744,7 @@ class ExternalEvent{
         let evt = nodom.Event.TouchEvents[evtObj.eventName];
         if(!el){
             const module = ModuleFactory.get(evtObj.moduleName);
-            el = module.container.querySelector("[key='" + evtObj.domKey + "']");    
+            el = module.container.querySelector("[key='" + evtObj.domKey + "']");
         }
         if(evt){
             // 解绑事件
@@ -2845,7 +2856,6 @@ ExternalEvent.TouchEvents = {
         }
     }
 }
-
 
 ExternalEvent.TouchEvents['swipeleft'] = ExternalEvent.TouchEvents['swipe'];
 ExternalEvent.TouchEvents['swiperight'] = ExternalEvent.TouchEvents['swipe'];
@@ -4671,10 +4681,15 @@ class Serializer{
 				const cls = jsonObj['className'];
 				let param = [];
 				//指令需要传入参数
-				if(cls === 'Directive'){
-					param = [jsonObj['type'],jsonObj['value'],vdom,module];
+				switch(cls){
+					case 'Directive':
+						param = [jsonObj['type'],jsonObj['value'],vdom,module];
+						break;
+					case 'Event':
+						param = [jsonObj['name']];
+						break;
 				}
-
+				
 				retObj = Class.newInstance(cls,param);
 				if(cls === 'Element'){
 					vdom = retObj;
