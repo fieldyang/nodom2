@@ -453,7 +453,9 @@ class Route{
 		me.params = [];  //参数
 		me.data={};
 		me.children = [];
-		
+		me.onEnter = config.onEnter;
+		me.onLeave = config.onLeave;
+
 		if(config.module instanceof Module){
 			config.module = config.module.name;
 		}

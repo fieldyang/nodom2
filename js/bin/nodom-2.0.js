@@ -3578,7 +3578,7 @@ class Module{
 			
 		}else{  //增量渲染
 			//执行每次渲染前事件
-			me.doModuleEvent('onFirstRender');
+			me.doModuleEvent('onBeforeRender');
 			if(me.model){
 				root.modelId = me.model.id;
 				let oldTree = me.renderTree;
@@ -3603,7 +3603,7 @@ class Module{
 				});
 			}
 			
-			//执行首次渲染后事件，延迟执行
+			//执行每次渲染后事件，延迟执行
 			setTimeout(()=>{
 				me.doModuleEvent('onRender');
 			},0);
@@ -3814,9 +3814,12 @@ class Module{
 	 * @param eventName 	事件名
 	 * @param param 		参数，为数组
 	 */
-	doModuleEvent(eventName,param){	
+	doModuleEvent(eventName,param){
 		const me = this;
 		let foo = me.methodFactory.get(eventName);
+		if(!param){
+			param = [me.model];
+		}
 		//调用onReceive方法
 		if(nodom.isFunction(foo)){
 			nodom.apply(foo,me.model,param);
@@ -4325,7 +4328,9 @@ class Route{
 		me.params = [];  //参数
 		me.data={};
 		me.children = [];
-		
+		me.onEnter = config.onEnter;
+		me.onLeave = config.onLeave;
+
 		if(config.module instanceof Module){
 			config.module = config.module.name;
 		}

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>route</title>
     <script type="text/javascript" src="../../js/bin/nodom-2.0.js"></script>
-
+    
     <style>
         .cls1,
         .colorimp {
@@ -31,7 +31,7 @@
 
 </body>
 <script>
-    nodom.config.appPath = '/examples/route/pages/';
+    nodom.config.appPath = '/nodom2/examples/route/pages/';
     nodom.config.routerPrePath = '/route';
     let mod = new Module({
         name: 'mainModule',
@@ -60,7 +60,7 @@
             routes: [{
                     title: '路由用法1-基本用法',
                     path: '/router/directive/route1',
-                    active: false
+                    active: true
                 },
                 {
                     title: '路由用法2-路由参数用法',
@@ -82,6 +82,11 @@
             home: true,
             list: false,
             data: false
+        },
+        methods:{
+            onFirstRender:function(){
+                console.log(this);
+            }
         }
     }, {
         name: 'r_pmod2',
@@ -142,7 +147,10 @@
             }, {
                 path: '/data',
                 module: 'r_mod3'
-            }]
+            }],
+            onLeave:function(model){
+                console.log(this,model);
+            }
         }, {
             path: '/directive/route2',
             module: 'r_pmod2',
