@@ -25,6 +25,13 @@ class Linker{
 
 	/**
 	 * ajax 请求
+	 * @param config 	url 				请求地址
+	 *					reqType 			请求类型 GET(默认) POST
+	 *					params 				参数，json格式
+	 *					async 				异步，默认true
+	 *  				timeout 			超时时间
+	 *					withCredentials 	同源策略，跨域时cookie保存，默认false
+	 * 					
 	 */
 	ajax(config){
 		return new Promise((resolve,reject)=>{
@@ -33,31 +40,35 @@ class Linker{
 	            config.params = config.params || {};
 	            config.params.$rand = Math.random();
 	        }
-	        
+	        const url = config.url;
 	        const async = config.async===false?false:true;
 			const req = new XMLHttpRequest();
-		    req.onload = ()=>{
-		    	let r;
-		    	switch(req.status){
-	                case 200:
-	                    r = req.responseText;
-	                    if(config.type === 'json'){
-	                        try{
-	                            r = JSON.parse(r);
-	                        }catch(e){
-	                            
-	                        }
-	                    }
-	                    resolve(r);
-	                    break; 
-	                default:    //服务器异常
-	                    reject(req.statusText);
-	            }
-	        }
-	        req.onerror = () => reject(xhr.statusText);
+		    //设置同源策略
+		    req.withCredentials = config.withCredentials;
 		    //类型默认为get
-
 		    const reqType = config.reqType||'GET';
+		    //超时，同步时不能设置
+		    req.timeout = async?config.timeout:0;
+		    
+		    req.onload = ()=>{
+		    	if(req.status === 200){
+		    		let r = req.responseText;
+			    	if(config.type === 'json'){
+	                    try{
+	                        r = JSON.parse(r);
+	                    }catch(e){
+	                        reject({type:"jsonparse"});
+	                    }
+	                }
+	                resolve(r);
+		    	}else{
+		    		reject({type:'error',url:url});
+		    	}
+		    }
+
+            req.ontimeout = () => reject({type:'timeout'});
+	        req.onerror = () => reject({type:'error',url:url});
+
 		    switch(reqType){
 	            case 'GET':
 	                //参数
@@ -76,10 +87,7 @@ class Linker{
 	                        url += '?' + pa;
 	                    }
 	                }
-	                req.open(reqType,config.url,async,config.user,config.pwd);
-	                if(async){
-	                    req.timeout = config.timeout;
-	                }
+	                req.open(reqType,url,async,config.user,config.pwd);
 	                req.send(null);
 	                break;
 	            case 'POST':
@@ -88,10 +96,18 @@ class Linker{
 	                    fd.append(o,config.params[o]);
 	                }
 	                req.open(reqType,url,async,config.user,config.pwd);
-	                req.timeout = config.timeout;
 	                req.send(fd);
 	                break;
 	        }
+	    }).catch((re)=>{
+	    	switch(re.type){
+	    		case "error":
+	    			throw Error.handle("notexist1",nodom.words.resource,re.url);
+	    		case "timeout":
+	    			throw Error.handle("timeout");
+	    		case "jsonparse":
+	    			throw Error.handle("jsonparse");
+	    	}
 	    });
 	}
 
@@ -103,13 +119,16 @@ class Linker{
 		urls.forEach((url)=>{
 			promises.push(new Promise((resolve,reject)=>{
 				const req = new XMLHttpRequest();
-		    	req.open("GET", url);
-			    req.onload = () => resolve(req.responseText);
-			    req.onerror = () => reject(req.statusText);
+		    	req.onload = () => resolve(req.responseText);
+			    req.onerror = () => reject(url);
+			    req.open("GET", url);
 			    req.send();
 			}));
 		});
-		return Promise.all(promises);
+
+		return Promise.all(promises).catch((text)=>{
+			throw Error.handle("notexist1",nodom.words.resource,text);
+		});
 	}
 
 	/**
@@ -140,8 +159,5 @@ class Linker{
 				});	
 			}
 		}
-		
-		
 	}	
-	
 }

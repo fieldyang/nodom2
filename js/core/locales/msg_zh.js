@@ -20,6 +20,7 @@ nodom.words = {
 	route:'路由',
 	routeView:'路由容器',
 	plugin:'插件',
+	resource:'资源',
 	method:'方法'
 };
 /*异常消息*/
@@ -34,11 +35,13 @@ nodom.ErrorMsgs = {
 	"exist1":"{0}'{1}'已存在",
 	"notexist":"{0}不存在",
 	"notexist1":"{0}'{1}'不存在",
-	'notupd':'{0}不可修改',
-	'notremove':'{0}不可删除',
-	'notremove1':'{0}{1}不可删除',
-	'namedinvalid':'{0}{1}命名错误，请参考用户手册对应命名规范',
-	'initial':'{0}初始化参数错误'
+	"notupd":"{0}不可修改",
+	"notremove":"{0}不可删除",
+	"notremove1":"{0}{1}不可删除",
+	"namedinvalid":"{0}{1}命名错误，请参考用户手册对应命名规范",
+	"initial":"{0}初始化参数错误",
+	"jsonparse":"JSON解析错误",
+	"timeout":"请求超时"
 };
 
 /*form消息*/
