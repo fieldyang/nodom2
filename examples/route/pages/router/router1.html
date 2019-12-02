@@ -5,5 +5,8 @@
 		<a x-route='/router/route1/list'  x-class="{colorimp:'list'}" active='{{list}}'>列表</a>&nbsp;&nbsp;
 		<a x-route='/router/route1/data'  x-class="{colorimp:'data'}" active='{{data}}'>数据</a>
 	</div>
+
+	<a x-route='router/directive/route2/rparam/data/3'>to router2</a>
+	<button onclick='Router.redirect("/router/route3/r1/r2")'>to router3</button>
 	<div x-router></div>
 </div>	

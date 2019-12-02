@@ -2,7 +2,6 @@
  * 暴露方法集
  */
 
-
 /**
  * 暴露的创建模块方法
  * @param config  数组或单个配置
@@ -13,7 +12,7 @@ nodom.createModule = function(config){
 			new Module(item);
 		});
 	}else{
-		return new (config);
+		return new Module(config);
 	}
 }
 

@@ -387,8 +387,8 @@ class Expression{
 		if(needEval){
 			try{
 				retStr = eval(retStr);	
-			}catch{
-
+			}catch(e){
+				
 			}
 		}else if(nodom.isString(retStr) && retStr.charAt(0) === '"'){ //字符串去掉两边的"
 			retStr = retStr.substring(1,retStr.length-1);

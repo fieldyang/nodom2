@@ -5,7 +5,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>route</title>
-    <script type="text/javascript" src="../../js/bin/nodom-2.0.js"></script>
+    <script src='../../js/core/base.js'></script>
+    <script src='../../js/core/config.js'></script>
+    <script src='../../js/core/class.js'></script>
+    <script src='../../js/core/linker.js'></script>
+    <script src='../../js/core/factory.js'></script>
+    <script src='../../js/core/messagefactory.js'></script>
+    <script src='../../js/core/modulefactory.js'></script>
+    <script src='../../js/core/expressionfactory.js'></script>
+    <script src='../../js/core/directivefactory.js'></script>
+    <script src='../../js/core/compiler.js'></script>
+    <script src='../../js/core/renderer.js'></script>
+    <script src='../../js/core/scheduler.js'></script>
+    <script src='../../js/core/expression.js'></script>
+    <script src='../../js/core/element.js'></script>
+    <script src='../../js/core/event.js'></script>
+    <script src='../../js/core/locales/msg_zh.js'></script>
+    <script src='../../js/core/error.js'></script>
+    <script src='../../js/core/modelfactory.js'></script>
+    <script src='../../js/core/model.js'></script>
+    <script src='../../js/core/filter.js'></script>
+    <script src='../../js/core/directivemanager.js'></script>
+    <script src='../../js/core/directive.js'></script>
+    <script src='../../js/core/module.js'></script>
+    <script src='../../js/core/methodfactory.js'></script>
+    <script src='../../js/core/router.js'></script>
+    <script src='../../js/core/filtermanager.js'></script>
+    <script src='../../js/core/serializer.js'></script>
+    <script src='../../js/core/extend/directiveinit.js'></script>
+    <script src='../../js/core/extend/filterinit.js'></script>
+    <script src='../../js/core/extend/classinit.js'></script>
+    <script src='../../js/core/extend/exposemethods.js'></script>
     
     <style>
         .cls1,
@@ -28,7 +58,7 @@
 
 </body>
 <script>
-    nodom.config.appPath = '/nodom2/examples/route/pages/';
+    nodom.config.appPath = '/examples/route/pages/';
     nodom.config.routerPrePath = '/route';
     let mod = new Module({
         name: 'mainModule',
@@ -149,19 +179,19 @@
                 useParentPath:true
             }],
             onLeave:function(model){
-                console.log(this,model);
+                // console.log(this,model);
             }
         }, {
             path: '/directive/route2',
             module: 'r_pmod2',
             onEnter: function () {
-                console.log('route2');
+                // console.log('route2');
             },
             routes: [{
                 path: '/rparam/:page/:id',
                 module: 'r_mod4',
                 onEnter: function () {
-                    console.log('route2/rparam');
+                    // console.log('route2/rparam');
                 }
             }]
         }, {

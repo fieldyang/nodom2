@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src='../js/core/base.js'></script>
+    <script src='../js/core/config.js'></script>
+    <script src='../js/core/class.js'></script>
+    <script src='../js/core/linker.js'></script>
+    <script src='../js/core/factory.js'></script>
+    <script src='../js/core/messagefactory.js'></script>
+    <script src='../js/core/modulefactory.js'></script>
+    <script src='../js/core/expressionfactory.js'></script>
+    <script src='../js/core/directivefactory.js'></script>
+    <script src='../js/core/compiler.js'></script>
+    <script src='../js/core/renderer.js'></script>
+    <script src='../js/core/scheduler.js'></script>
+    <script src='../js/core/expression.js'></script>
+    <script src='../js/core/element.js'></script>
+    <script src='../js/core/event.js'></script>
+    <script src='../js/core/locales/msg_zh.js'></script>
+    <script src='../js/core/error.js'></script>
+    <script src='../js/core/modelfactory.js'></script>
+    <script src='../js/core/model.js'></script>
+    <script src='../js/core/filter.js'></script>
+    <script src='../js/core/directivemanager.js'></script>
+    <script src='../js/core/directive.js'></script>
+    <script src='../js/core/module.js'></script>
+    <script src='../js/core/methodfactory.js'></script>
+    <script src='../js/core/router.js'></script>
+    <script src='../js/core/filtermanager.js'></script>
+    <script src='../js/core/serializer.js'></script>
+    <script src='../js/core/extend/directiveinit.js'></script>
+    <script src='../js/core/extend/filterinit.js'></script>
+    <script src='../js/core/extend/classinit.js'></script>
+    <script src='../js/core/extend/exposemethods.js'></script>
+</head>
+<body>
+    <div></div>
+</body>
+<script>
+    nodom.config.appPath = '';
+    nodom.createModule({
+        el:document.querySelector('div'),
+        root:true,
+        templateUrl:'/app/view/mod1.html',
+        dataUrl:'/app/data/mod1.json'
+    });
+</script>
+</html>

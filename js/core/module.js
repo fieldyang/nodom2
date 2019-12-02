@@ -13,8 +13,8 @@ class Module{
 		me.children = undefined; 			//子模块（数组）
 		me.selector = undefined; 			//container 选择器
 		me.isMain = false; 					//主模块
-		me.firstRenderOps = [];   			//首次渲染后执行数组
-		me.beforeFirstRenderOps = [];  		//首次渲染前执行数组
+		me.firstRenderOps = [];   			//首次渲染后执行操作数组
+		me.beforeFirstRenderOps = [];  		//首次渲染前执行操作数组
 		me.containerParam = undefined; 		//container 参数{module:,selector:}
 		me.state = 0; 						//状态 0 create(创建)、1 init(初始化，已编译)、2 unactive(渲染后被置为非激活) 3 active(激活，可渲染显示)、4 dead(死亡)
 
@@ -125,7 +125,6 @@ class Module{
         		urlArr.push(url);
         	});
         }
-
 
         //模版信息
         if(config.template){ //模版串
@@ -328,7 +327,6 @@ class Module{
 					ct = module.container;
 				}
 			}
-
 			if(ct){
 				me.container = ct.querySelector(me.containerParam.selector);
 				return me.container !== null;
