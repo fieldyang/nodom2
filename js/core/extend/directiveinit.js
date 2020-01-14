@@ -205,36 +205,24 @@ DirectiveManager.addType('else',{
  * 描述：显示指令
  */
 DirectiveManager.addType('show',{
-    init:(directive,dom,module)=>{
+    init:(directive,dom,module,el)=>{
         let value = directive.value;
         if(!value){
             throw Error.handle("paramException","x-show");
         }
-        //value为一个表达式
         let expr = new Expression(value,module);
         directive.value = expr;
     },
     handle:(directive,dom,module,parent)=>{
-        //设置forceRender
         let model = module.modelFactory.get(dom.modelId);
         let v = directive.value.val(model);
+        //渲染
+        if(v&&v!=='false'){
+            dom.dontRender = false;
+        }else{//不渲染
+            dom.dontRender = true;
+        }
         
-        // 获取style属性数组
-        let arr = dom.style?dom.style.split(';'):[];
-        let find = false;
-        let show = v && v !== 'false'? 'block':'none';
-        for(let i=0;i<arr.length;i++){
-            if(arr[i].indexOf('display:') === -1){
-                find = true;
-                arr[i] = 'display:' + show;
-                break;
-            }
-        }
-        if(!find){
-            arr.push('display:' + show);
-        }
-        //组合style属性
-        dom.props['style'] = arr.join(';');
     }
 });
 

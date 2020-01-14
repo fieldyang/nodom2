@@ -815,9 +815,9 @@ class nodom{
 
 nodom.config = {
 	renderTick:50,								//渲染时间间隔
-    appPath:'/page/',							//应用加载默认路径,
+    appPath:'/',							//应用加载默认路径,
     deviceType:'ontouchend' in document?1:2,	//设备类型  1:触屏，2:非触屏	
-    routerPrePath:'/route'						//路由前置路径
+    routerPrePath:'/webroute'						//路由前置路径
 };
 
 
@@ -908,7 +908,7 @@ class Linker{
 	            config.params = config.params || {};
 	            config.params.$rand = Math.random();
 	        }
-	        const url = config.url;
+	        let url = config.url;
 	        const async = config.async===false?false:true;
 			const req = new XMLHttpRequest();
 		    //设置同源策略
@@ -936,7 +936,7 @@ class Linker{
 
             req.ontimeout = () => reject({type:'timeout'});
 	        req.onerror = () => reject({type:'error',url:url});
-
+			
 		    switch(reqType){
 	            case 'GET':
 	                //参数
@@ -954,7 +954,7 @@ class Linker{
 	                    }else{
 	                        url += '?' + pa;
 	                    }
-	                }
+					}
 	                req.open(reqType,url,async,config.user,config.pwd);
 	                req.send(null);
 	                break;
@@ -962,12 +962,13 @@ class Linker{
 	                let fd = new FormData();
 	                for(let o in config.params){
 	                    fd.append(o,config.params[o]);
-	                }
-	                req.open(reqType,url,async,config.user,config.pwd);
+					}
+					req.open(reqType,url,async,config.user,config.pwd);
 	                req.send(fd);
 	                break;
 	        }
 	    }).catch((re)=>{
+			console.log(re);
 	    	switch(re.type){
 	    		case "error":
 	    			throw Error.handle("notexist1",nodom.words.resource,re.url);
@@ -1162,27 +1163,28 @@ class Compiler {
      * @return          虚拟element
      */
     static compile(module,elementStr){
-        let dom = new Element();
         const div = nodom.newEl('div');
         div.innerHTML = elementStr;
-        dom.isRoot = true;
+        let oe = new Element();
+        oe.root = true;
         //调用编译
-        this.compileDom(module,div,dom);
-        return dom;
+        for(let i=0;i<div.childNodes.length;i++){
+            this.compileDom(module,div.childNodes[i],oe);
+        }
+        
+        return oe;
     }
 
     /**
      * 编译dom
+     * @param module        模块
      * @param ele           待编译element
      * @param parent        父节点（virtualdom）   
-     * @param expressions   表达式数组
-     * @param directives    指令数组
      */
 
     static compileDom(module,ele,parent){
         const me = this;
         let oe = new Element();
-        let props = oe.props;
         //注视标志
         let isComment = false;
         switch(ele.nodeType) {
@@ -1254,14 +1256,13 @@ class Compiler {
      * @return          处理后的字符串和表达式数组
      */
     static compileExpression(module,exprStr){
-        let reg = new RegExp("\{\{.+?\}\}",'g');
-        if(reg.test(exprStr) === false){
+        if(/\{\{.+?\}\}/.test(exprStr) === false){
             return exprStr;
-        }
-        let retA = new Array();
-        let ite = exprStr.matchAll(/\{\{.+?\}\}/g);
-        let re,oIndex=0;
-        for (re of ite) {
+		}
+		let reg = /\{\{.+?\}\}/g;
+		let retA = new Array();
+		let re,oIndex=0;
+		while((re=reg.exec(exprStr))!==null){
             let ind = re.index;
             //字符串
             if(ind>oIndex){
@@ -1584,7 +1585,6 @@ class Expression{
 			me.fields.forEach((field)=>{
 				fieldObj[field] = me.getFieldValue(model,field);
 			});
-			
 		}else{
 			fieldObj = model;
 		}
@@ -1732,7 +1732,7 @@ class Expression{
 				case 'field'://变量
 					value = fieldObj[item.val];
 					//字符串需要处理
-					if(nodom.isString(value) && value !== ''){
+					if(nodom.isString(value)){
 						value = nodom.addStrQuot(value);
 					}
 					retStr += value;
@@ -1773,9 +1773,7 @@ class Expression{
 						retStr += value;
 					} 
 			}
-			
 		});
-
 		if(needEval){
 			try{
 				retStr = eval(retStr);	
@@ -1784,6 +1782,10 @@ class Expression{
 			}
 		}else if(nodom.isString(retStr) && retStr.charAt(0) === '"'){ //字符串去掉两边的"
 			retStr = retStr.substring(1,retStr.length-1);
+		}
+		//替换所有undefined为空
+		if(retStr === undefined){
+			retStr = '';
 		}
 		return retStr;
 	}
@@ -1812,13 +1814,13 @@ class Expression{
 			model = module.model;
 		}
 		if(!model){
-			return '';
+			return undefined;
 		}
 		let v = model.query(field);
 		if(v === undefined && model !== module.model){
 			v = module.model.query(field);
 		}
-		return v===undefined?'':v;
+		return v;
 	}
 }
 /**
@@ -1891,7 +1893,6 @@ class Element{
 		let el,el1;
 		let type = params.type;
 		let parent = params.parent;
-		let modelFac = module.modelFactory;
 		//构建el
 		if(!parent){
 			el = module.container;
@@ -1902,7 +1903,7 @@ class Element{
 				el = module.container.querySelector("[key='"+ me.key +"']");
 			}	
 		}
-
+		// console.log(el);
 		if(!el){
 			return;
 		}
@@ -2537,6 +2538,9 @@ class Event{
         const me = this;
         const module = ModuleFactory.get(me.moduleName);
         const dom = module.renderTree.query(me.domKey);
+        if(!module.hasContainer()){
+            return;
+        }
         const el = module.container.querySelector("[key='" + me.domKey + "']");
         const model = module.modelFactory.get(dom.modelId);
         //如果capture为true，则先执行自有事件，再执行代理事件，否则反之
@@ -2904,7 +2908,8 @@ nodom.words = {
 	routeView:'路由容器',
 	plugin:'插件',
 	resource:'资源',
-	method:'方法'
+	method:'方法',
+	root:'根'
 };
 /*异常消息*/
 nodom.ErrorMsgs = {
@@ -3301,16 +3306,16 @@ class Directive{
 	 * @param value 	指令值
 	 * @param vdom 		虚拟dom
 	 * @param module 	模块	
+	 * @param el 		element
 	 */
-	constructor(type,value,vdom,module){
+	constructor(type,value,vdom,module,el){
 		const me = this;
 		me.type = type;
-		// console.log(type,value);
 		if(nodom.isString(value)){
 			me.value = value.trim();
 		}
 		if(type !== undefined){
-			nodom.apply(DirectiveManager.init,DirectiveManager,[me,vdom,module]);
+			nodom.apply(DirectiveManager.init,DirectiveManager,[me,vdom,module,el]);
 		}
 
 		me.id = nodom.genId();
@@ -3346,7 +3351,8 @@ class Module{
 		me.beforeFirstRenderOps = [];  		//首次渲染前执行操作数组
 		me.containerParam = undefined; 		//container 参数{module:,selector:}
 		me.state = 0; 						//状态 0 create(创建)、1 init(初始化，已编译)、2 unactive(渲染后被置为非激活) 3 active(激活，可渲染显示)、4 dead(死亡)
-
+		me.dataUrl = undefined; 			//数据url
+		me.loadNewData = false; 			//需要加载新数据
 		// 模块名字
 		if(config.name){
 			me.name = config.name;
@@ -3366,7 +3372,6 @@ class Module{
 		if(config){
 			//保存config，存在延迟初始化情况
 			me.initConfig = config;
-
 			//保存container参数
 			if(nodom.isString(config.el)){
 				me.containerParam = {
@@ -3479,8 +3484,9 @@ class Module{
     		me.model = new Model(config.data,me);
     	}else if(config.dataUrl){  //数据文件url
     		typeArr.push('data');
-    		urlArr.push(config.dataUrl);
-    	}
+			urlArr.push(config.dataUrl);
+			me.dataUrl = config.dataUrl;
+		}
     	
     	//批量请求文件
     	if(typeArr.length > 0){
@@ -3505,20 +3511,19 @@ class Module{
 	    					me.expressionFactory = arr[1];
 	    					break;
 	    				case 'data': 	//数据
-	    					me.model = new Model(JSON.parse(file),me);
+							me.model = new Model(JSON.parse(file),me);
 	    			}
 	    		});
 	    		//主模块状态变为3
 		    	changeState(me);
-		    	delete me.initing;
-	    	});	
+				delete me.initing;
+	    	});
     	}else{
     		me.initLinker = Promise.resolve();
     		//修改状态
     		changeState(me);
     		delete me.initing;
     	}
-
 
     	if(nodom.isArray(me.initConfig.modules)){
     		me.initConfig.modules.forEach((item)=>{
@@ -3557,43 +3562,22 @@ class Module{
 		if(me.state !== 3 || !me.virtualDom || !me.hasContainer()){
 			return false;
 		}
-
 		//克隆新的树
 		let root = me.virtualDom.clone(me);
-		
 		if(me.firstRender){
-			//执行首次渲染前事件
-			me.doModuleEvent('onBeforeFirstRender');
-			me.beforeFirstRenderOps.forEach((foo)=>{
-				nodom.apply(foo,me,[]);
-			});
-			me.beforeFirstRenderOps = [];
-			//渲染树
-			me.renderTree = root;	
-			if(me.model){
-				root.modelId = me.model.id;
-			}
-			root.render(me,null);
-			//渲染到html
-			if(root.children){
-				root.children.forEach((item)=>{
-					item.renderToHtml(me,{type:'fresh'});
-				});	
-			}
-
-			//删除首次渲染标志
-			delete me.firstRender;
-			//延迟执行
-			setTimeout(()=>{
-				//执行首次渲染后事件
-				me.doModuleEvent('onFirstRender');
-				//执行首次渲染后操作队列
-				me.firstRenderOps.forEach((foo)=>{
-					nodom.apply(foo,me,[]);
+			//model无数据，如果存在dataUrl，则需要加载数据
+			if(me.loadNewData && me.dataUrl){
+				new Linker('ajax',{
+					url:me.dataUrl,
+					type:'json'
+				}).then((r)=>{
+					me.model = new Model(r,me);
+					me.doFirstRender(root);
 				});
-				me.firstRenderOps = [];
-			},0);
-			
+				me.loadNewData = false;
+			}else{
+				me.doFirstRender(root);
+			}
 		}else{  //增量渲染
 			//执行每次渲染前事件
 			me.doModuleEvent('onBeforeRender');
@@ -3625,12 +3609,11 @@ class Module{
 			setTimeout(()=>{
 				me.doModuleEvent('onRender');
 			},0);
-			
 		}
 
 		//数组还原
 		me.renderDoms = [];
-
+		
 		//子模块渲染
 		if(nodom.isArray(me.children)){
 			me.children.forEach(item=>{
@@ -3639,11 +3622,50 @@ class Module{
 		}
 		return true;
 	}
+	/**
+	 * 执行首次渲染
+	 * @param root 	根虚拟dom
+	 */
+	doFirstRender(root){
+		let me = this;
+		//执行首次渲染前事件
+		me.doModuleEvent('onBeforeFirstRender');
+		me.beforeFirstRenderOps.forEach((foo)=>{
+			nodom.apply(foo,me,[]);
+		});
+		me.beforeFirstRenderOps = [];
+		//渲染树
+		me.renderTree = root;	
+		if(me.model){
+			root.modelId = me.model.id;
+		}
+		
+		root.render(me,null);
+		
+		//渲染到html
+		if(root.children){
+			root.children.forEach((item)=>{
+				item.renderToHtml(me,{type:'fresh'});
+			});	
+		}
 
+		//删除首次渲染标志
+		delete me.firstRender;
+		//延迟执行
+		setTimeout(()=>{
+			//执行首次渲染后事件
+			me.doModuleEvent('onFirstRender');
+			//执行首次渲染后操作队列
+			me.firstRenderOps.forEach((foo)=>{
+				nodom.apply(foo,me,[]);
+			});
+			me.firstRenderOps = [];
+		},0);
+		
+	}
 	// 检查容器是否存在，如果不存在，则尝试找到
 	hasContainer(){
 		const me = this;
-
 		if(me.container){
 			return true;
 		}else if(me.containerParam !== undefined){
@@ -3656,11 +3678,12 @@ class Module{
 					ct = module.container;
 				}
 			}
+
 			if(ct){
 				me.container = ct.querySelector(me.containerParam.selector);
 				return me.container !== null;
 			}
-
+			console.log(me.container);
 		}
 		
 		return false;
@@ -3834,13 +3857,16 @@ class Module{
 	doModuleEvent(eventName,param){
 		const me = this;
 		let foo = me.methodFactory.get(eventName);
+		if(!nodom.isFunction(foo)){
+			return;
+		}
 		if(!param){
 			param = [me.model];
+		}else{
+			param.unshift(me.model);
 		}
-		//调用onReceive方法
-		if(nodom.isFunction(foo)){
-			nodom.apply(foo,me.model,param);
-		}
+		//调用方法
+		nodom.apply(foo,me,param);
 	}
 
 	/**
@@ -3920,6 +3946,7 @@ class Router{
 			}
 		}
 		me.waitList.push(path);
+		
 		me.load();
 	}
 
@@ -3946,6 +3973,7 @@ class Router{
 	static start(path){
 		const me = this;
 		let diff = me.compare(me.currentPath,path);
+		
 		//获得当前模块，用于寻找router view
 		let parentModule = diff[0] === null?ModuleFactory.getMain():ModuleFactory.get(diff[0].module);
 		//onleave事件，从末往前执行
@@ -3967,10 +3995,9 @@ class Router{
 
 		let operArr = [];  	//待操作函数数组
 		let paramArr = []; 	//函数对应参数数组
-		let showPath = '';  //实际要显示的路径
-
-		//设置active
+		let showPath;  //实际要显示的路径
 		
+		//设置active
 		if(diff[2].length === 0){ //路由相同，参数不同
 			if(diff[0] !== null){
 				setRouteParamToModel(diff[0]);
@@ -3978,8 +4005,8 @@ class Router{
 				if(!diff[0].useParentPath){
 					showPath = diff[0].fullPath; 
 				}
+				diff[0].setLinkActive(true);
 			}
-			diff[0].setLinkActive(true);
 		}else{ //路由不同
 			//加载模块
 			for(let i=0;i<diff[2].length;i++){
@@ -3988,11 +4015,11 @@ class Router{
 				if(!route || !route.module){
 					continue;
 				}
-
+				
 				if(!route.useParentPath){
 					showPath = route.fullPath; 
 				}
-
+				
 				if(!parentModule.routerKey){
 					throw Error.handle('notexist',nodom.words.routeView);
 				}
@@ -4041,9 +4068,14 @@ class Router{
 				);
 			}
 		}
+		if(!showPath){
+			if(!me.getRoute(path)){
+				throw Error.handle('notexist1',nodom.words.route,path);
+			}
+		}
 
 		//如果是history popstate，则不加入history
-		if(me.startStyle !== 2 && showPath !== ''){ 
+		if(me.startStyle !== 2 && showPath){ 
 			//子路由，替换state
 			if(me.showPath && showPath.indexOf(me.showPath) === 0){
 				history.replaceState(path,'', nodom.config.routerPrePath + showPath);	
@@ -4053,12 +4085,13 @@ class Router{
 			//设置显示路径
 			me.showPath = showPath;
 		}
-		//待处理模块链为空，不需要处理
+		
 		if(operArr.length === 0){
 			Router.loading = false;
 			Router.startStyle = 0;
 			return;
 		}
+		
 		//修改currentPath
 		me.currentPath = path;
 		
@@ -4067,6 +4100,8 @@ class Router{
 			Router.loading = false;
 			me.load();
 			Router.startStyle = 0;
+		}).catch((e)=>{
+			throw e;
 		});
 
 		/**
@@ -4102,11 +4137,17 @@ class Router{
 		this.addPath(path);
 	}
 	
+	/**
+	 * 添加路由
+	 * @param {object} route 	路由配置 
+	 * @param {object} parent 	父路由 
+	 */
 	static addRoute(route,parent){
 		//加入router tree
 		if(RouterTree.add(route,parent) === false){
 			throw Error.handle("exist1",nodom.words.route,route.path);
 		}
+		
 		//加入map
 		this.routes.set(route.id,route);
 	}
@@ -4125,7 +4166,6 @@ class Router{
 		if(routes === null || routes.length === 0){
 			return null;
 		}
-				
 		//routeid 转route
 		if(last){   //获取最后一个
 			return routes[routes.length-1];
@@ -4227,7 +4267,8 @@ class Router{
 			if(!dom){
 				return;
 			}
-			
+			// dom route 路径
+			let domPath = dom.props['path'];
 			if(dom.exprProps.hasOwnProperty('active')){ // active属性为表达式，修改字段值
 				let model = module.modelFactory.get(dom.modelId);
 				if(!model){
@@ -4239,15 +4280,15 @@ class Router{
 					return;
 				}
 				let field = expr.fields[0];
-				//路径相同则设置active 为true，否则为false
-				if(path.indexOf(dom.props['path']) === 0){
+				//路径相同或参数路由路径前部分相同则设置active 为true，否则为false
+				if(path === domPath || path.indexOf(domPath+'/') === 0){
 					model.data[field] = true;
 				}else{
 					model.data[field] = false;
 				}
 			}else if(dom.props.hasOwnProperty('active')){  //active值属性
-				//路径相同则设置active 为true，否则为false
-				if(path.indexOf(dom.props['path']) === 0){
+				//路径相同或参数路由路径前部分相同则设置active 为true，否则为false
+				if(path === domPath || path.indexOf(domPath+'/') === 0){
 					dom.props['active'] = true;
 				}else{
 					dom.props['active'] = false;
@@ -4331,7 +4372,6 @@ class RouterTree {
      * @return 添加是否成功 type Boolean
      */
     static add(route,parent) {
-
     	const me = this;
     	//创建根节点
     	if(!me.root){
@@ -4339,11 +4379,9 @@ class RouterTree {
     	}
         let pathArr = route.path.split('/');
         let node = parent||me.root;
-        let path = '';
         let param = [];
-        let routeValue; 		//记录最后一个非参数路径
         let paramIndex = -1;	//最后一个参数开始
-        let prePath = '';
+        let prePath = '';		//前置路径
         for(let i=0;i<pathArr.length;i++){
         	let v = pathArr[i].trim();
         	if(v === ''){
@@ -4391,8 +4429,8 @@ class RouterTree {
     	if(node !== undefined && node !== route){
     		route.path = prePath;
         	node.children.push(route);	
-    	}
-        return true;
+		}
+		return true;
     }
 	
 	/**
@@ -4414,14 +4452,12 @@ class RouterTree {
     	for(let i=0;i<pathArr.length;i++){
     		let v = pathArr[i].trim();
         	if(v === ''){
-        		pathArr.splice(i--,1);
         		continue;
         	}
         	let find = false;
         	for(let j=0;j<node.children.length;j++){
         		if(node.children[j].path === v){
         			//设置完整路径
-
         			if(preNode !== me.root){
         				preNode.fullPath = fullPath;
         				preNode.data = node.data;
@@ -4444,15 +4480,15 @@ class RouterTree {
         		if(paramIndex < node.params.length){ //超出参数长度的废弃
         			node.data[node.params[paramIndex++]] = v;	
         		}
-        	}
-        }
+			}
+	    }
 
         //最后一个节点
         if(node !== me.root){
         	node.fullPath = fullPath;
         	retArr.push(node);
-        }
-        return retArr;
+		}
+		return retArr;
     }
 }
 
@@ -4466,7 +4502,6 @@ window.addEventListener('popstate' , function(e){
 	}
 	Router.startStyle = 2;
 	Router.addPath(state);
-	// Router.start(state);
 });
 
 
@@ -4547,7 +4582,6 @@ DirectiveManager.addType('router',{
 		return;
 	}
 });
-
 /**
  *  编译器
  *  描述：用于进行预编译和预编译后的json串反序列化，处理两个部分：虚拟dom树和表达式工厂
@@ -5028,36 +5062,24 @@ DirectiveManager.addType('else',{
  * 描述：显示指令
  */
 DirectiveManager.addType('show',{
-    init:(directive,dom,module)=>{
+    init:(directive,dom,module,el)=>{
         let value = directive.value;
         if(!value){
             throw Error.handle("paramException","x-show");
         }
-        //value为一个表达式
         let expr = new Expression(value,module);
         directive.value = expr;
     },
     handle:(directive,dom,module,parent)=>{
-        //设置forceRender
         let model = module.modelFactory.get(dom.modelId);
         let v = directive.value.val(model);
+        //渲染
+        if(v&&v!=='false'){
+            dom.dontRender = false;
+        }else{//不渲染
+            dom.dontRender = true;
+        }
         
-        // 获取style属性数组
-        let arr = dom.style?dom.style.split(';'):[];
-        let find = false;
-        let show = v && v !== 'false'? 'block':'none';
-        for(let i=0;i<arr.length;i++){
-            if(arr[i].indexOf('display:') === -1){
-                find = true;
-                arr[i] = 'display:' + show;
-                break;
-            }
-        }
-        if(!find){
-            arr.push('display:' + show);
-        }
-        //组合style属性
-        dom.props['style'] = arr.join(';');
     }
 });
 
@@ -5423,6 +5445,7 @@ FilterManager.addType('number',(value,param)=>{
     for(let i=0;i<digits;i++){
         x*=10;
     }
+    console.log(x);
     return ((value * x + 0.5) | 0) / x;
 });
 

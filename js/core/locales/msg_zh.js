@@ -21,7 +21,8 @@ nodom.words = {
 	routeView:'路由容器',
 	plugin:'插件',
 	resource:'资源',
-	method:'方法'
+	method:'方法',
+	root:'根'
 };
 /*异常消息*/
 nodom.ErrorMsgs = {

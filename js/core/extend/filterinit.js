@@ -51,6 +51,7 @@ FilterManager.addType('number',(value,param)=>{
     for(let i=0;i<digits;i++){
         x*=10;
     }
+    console.log(x);
     return ((value * x + 0.5) | 0) / x;
 });
 

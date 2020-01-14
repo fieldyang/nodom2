@@ -21,27 +21,28 @@ class Compiler {
      * @return          虚拟element
      */
     static compile(module,elementStr){
-        let dom = new Element();
         const div = nodom.newEl('div');
         div.innerHTML = elementStr;
-        dom.isRoot = true;
+        let oe = new Element();
+        oe.root = true;
         //调用编译
-        this.compileDom(module,div,dom);
-        return dom;
+        for(let i=0;i<div.childNodes.length;i++){
+            this.compileDom(module,div.childNodes[i],oe);
+        }
+        
+        return oe;
     }
 
     /**
      * 编译dom
+     * @param module        模块
      * @param ele           待编译element
      * @param parent        父节点（virtualdom）   
-     * @param expressions   表达式数组
-     * @param directives    指令数组
      */
 
     static compileDom(module,ele,parent){
         const me = this;
         let oe = new Element();
-        let props = oe.props;
         //注视标志
         let isComment = false;
         switch(ele.nodeType) {
@@ -113,14 +114,13 @@ class Compiler {
      * @return          处理后的字符串和表达式数组
      */
     static compileExpression(module,exprStr){
-        let reg = new RegExp("\{\{.+?\}\}",'g');
-        if(reg.test(exprStr) === false){
+        if(/\{\{.+?\}\}/.test(exprStr) === false){
             return exprStr;
-        }
-        let retA = new Array();
-        let ite = exprStr.matchAll(/\{\{.+?\}\}/g);
-        let re,oIndex=0;
-        for (re of ite) {
+		}
+		let reg = /\{\{.+?\}\}/g;
+		let retA = new Array();
+		let re,oIndex=0;
+		while((re=reg.exec(exprStr))!==null){
             let ind = re.index;
             //字符串
             if(ind>oIndex){

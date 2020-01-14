@@ -17,7 +17,8 @@ class Module{
 		me.beforeFirstRenderOps = [];  		//首次渲染前执行操作数组
 		me.containerParam = undefined; 		//container 参数{module:,selector:}
 		me.state = 0; 						//状态 0 create(创建)、1 init(初始化，已编译)、2 unactive(渲染后被置为非激活) 3 active(激活，可渲染显示)、4 dead(死亡)
-
+		me.dataUrl = undefined; 			//数据url
+		me.loadNewData = false; 			//需要加载新数据
 		// 模块名字
 		if(config.name){
 			me.name = config.name;
@@ -37,7 +38,6 @@ class Module{
 		if(config){
 			//保存config，存在延迟初始化情况
 			me.initConfig = config;
-
 			//保存container参数
 			if(nodom.isString(config.el)){
 				me.containerParam = {
@@ -150,8 +150,9 @@ class Module{
     		me.model = new Model(config.data,me);
     	}else if(config.dataUrl){  //数据文件url
     		typeArr.push('data');
-    		urlArr.push(config.dataUrl);
-    	}
+			urlArr.push(config.dataUrl);
+			me.dataUrl = config.dataUrl;
+		}
     	
     	//批量请求文件
     	if(typeArr.length > 0){
@@ -176,20 +177,19 @@ class Module{
 	    					me.expressionFactory = arr[1];
 	    					break;
 	    				case 'data': 	//数据
-	    					me.model = new Model(JSON.parse(file),me);
+							me.model = new Model(JSON.parse(file),me);
 	    			}
 	    		});
 	    		//主模块状态变为3
 		    	changeState(me);
-		    	delete me.initing;
-	    	});	
+				delete me.initing;
+	    	});
     	}else{
     		me.initLinker = Promise.resolve();
     		//修改状态
     		changeState(me);
     		delete me.initing;
     	}
-
 
     	if(nodom.isArray(me.initConfig.modules)){
     		me.initConfig.modules.forEach((item)=>{
@@ -228,43 +228,22 @@ class Module{
 		if(me.state !== 3 || !me.virtualDom || !me.hasContainer()){
 			return false;
 		}
-
 		//克隆新的树
 		let root = me.virtualDom.clone(me);
-		
 		if(me.firstRender){
-			//执行首次渲染前事件
-			me.doModuleEvent('onBeforeFirstRender');
-			me.beforeFirstRenderOps.forEach((foo)=>{
-				nodom.apply(foo,me,[]);
-			});
-			me.beforeFirstRenderOps = [];
-			//渲染树
-			me.renderTree = root;	
-			if(me.model){
-				root.modelId = me.model.id;
-			}
-			root.render(me,null);
-			//渲染到html
-			if(root.children){
-				root.children.forEach((item)=>{
-					item.renderToHtml(me,{type:'fresh'});
-				});	
-			}
-
-			//删除首次渲染标志
-			delete me.firstRender;
-			//延迟执行
-			setTimeout(()=>{
-				//执行首次渲染后事件
-				me.doModuleEvent('onFirstRender');
-				//执行首次渲染后操作队列
-				me.firstRenderOps.forEach((foo)=>{
-					nodom.apply(foo,me,[]);
+			//model无数据，如果存在dataUrl，则需要加载数据
+			if(me.loadNewData && me.dataUrl){
+				new Linker('ajax',{
+					url:me.dataUrl,
+					type:'json'
+				}).then((r)=>{
+					me.model = new Model(r,me);
+					me.doFirstRender(root);
 				});
-				me.firstRenderOps = [];
-			},0);
-			
+				me.loadNewData = false;
+			}else{
+				me.doFirstRender(root);
+			}
 		}else{  //增量渲染
 			//执行每次渲染前事件
 			me.doModuleEvent('onBeforeRender');
@@ -296,12 +275,11 @@ class Module{
 			setTimeout(()=>{
 				me.doModuleEvent('onRender');
 			},0);
-			
 		}
 
 		//数组还原
 		me.renderDoms = [];
-
+		
 		//子模块渲染
 		if(nodom.isArray(me.children)){
 			me.children.forEach(item=>{
@@ -310,11 +288,50 @@ class Module{
 		}
 		return true;
 	}
+	/**
+	 * 执行首次渲染
+	 * @param root 	根虚拟dom
+	 */
+	doFirstRender(root){
+		let me = this;
+		//执行首次渲染前事件
+		me.doModuleEvent('onBeforeFirstRender');
+		me.beforeFirstRenderOps.forEach((foo)=>{
+			nodom.apply(foo,me,[]);
+		});
+		me.beforeFirstRenderOps = [];
+		//渲染树
+		me.renderTree = root;	
+		if(me.model){
+			root.modelId = me.model.id;
+		}
+		
+		root.render(me,null);
+		
+		//渲染到html
+		if(root.children){
+			root.children.forEach((item)=>{
+				item.renderToHtml(me,{type:'fresh'});
+			});	
+		}
 
+		//删除首次渲染标志
+		delete me.firstRender;
+		//延迟执行
+		setTimeout(()=>{
+			//执行首次渲染后事件
+			me.doModuleEvent('onFirstRender');
+			//执行首次渲染后操作队列
+			me.firstRenderOps.forEach((foo)=>{
+				nodom.apply(foo,me,[]);
+			});
+			me.firstRenderOps = [];
+		},0);
+		
+	}
 	// 检查容器是否存在，如果不存在，则尝试找到
 	hasContainer(){
 		const me = this;
-
 		if(me.container){
 			return true;
 		}else if(me.containerParam !== undefined){
@@ -327,11 +344,12 @@ class Module{
 					ct = module.container;
 				}
 			}
+
 			if(ct){
 				me.container = ct.querySelector(me.containerParam.selector);
 				return me.container !== null;
 			}
-
+			console.log(me.container);
 		}
 		
 		return false;
@@ -505,13 +523,16 @@ class Module{
 	doModuleEvent(eventName,param){
 		const me = this;
 		let foo = me.methodFactory.get(eventName);
+		if(!nodom.isFunction(foo)){
+			return;
+		}
 		if(!param){
 			param = [me.model];
+		}else{
+			param.unshift(me.model);
 		}
-		//调用onReceive方法
-		if(nodom.isFunction(foo)){
-			nodom.apply(foo,me.model,param);
-		}
+		//调用方法
+		nodom.apply(foo,me,param);
 	}
 
 	/**

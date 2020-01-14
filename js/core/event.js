@@ -74,6 +74,9 @@ class Event{
         const me = this;
         const module = ModuleFactory.get(me.moduleName);
         const dom = module.renderTree.query(me.domKey);
+        if(!module.hasContainer()){
+            return;
+        }
         const el = module.container.querySelector("[key='" + me.domKey + "']");
         const model = module.modelFactory.get(dom.modelId);
         //如果capture为true，则先执行自有事件，再执行代理事件，否则反之

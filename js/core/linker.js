@@ -40,7 +40,7 @@ class Linker{
 	            config.params = config.params || {};
 	            config.params.$rand = Math.random();
 	        }
-	        const url = config.url;
+	        let url = config.url;
 	        const async = config.async===false?false:true;
 			const req = new XMLHttpRequest();
 		    //设置同源策略
@@ -68,7 +68,7 @@ class Linker{
 
             req.ontimeout = () => reject({type:'timeout'});
 	        req.onerror = () => reject({type:'error',url:url});
-
+			
 		    switch(reqType){
 	            case 'GET':
 	                //参数
@@ -86,7 +86,7 @@ class Linker{
 	                    }else{
 	                        url += '?' + pa;
 	                    }
-	                }
+					}
 	                req.open(reqType,url,async,config.user,config.pwd);
 	                req.send(null);
 	                break;
@@ -94,12 +94,13 @@ class Linker{
 	                let fd = new FormData();
 	                for(let o in config.params){
 	                    fd.append(o,config.params[o]);
-	                }
-	                req.open(reqType,url,async,config.user,config.pwd);
+					}
+					req.open(reqType,url,async,config.user,config.pwd);
 	                req.send(fd);
 	                break;
 	        }
 	    }).catch((re)=>{
+			console.log(re);
 	    	switch(re.type){
 	    		case "error":
 	    			throw Error.handle("notexist1",nodom.words.resource,re.url);

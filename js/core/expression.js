@@ -192,7 +192,6 @@ class Expression{
 			me.fields.forEach((field)=>{
 				fieldObj[field] = me.getFieldValue(model,field);
 			});
-			
 		}else{
 			fieldObj = model;
 		}
@@ -340,7 +339,7 @@ class Expression{
 				case 'field'://变量
 					value = fieldObj[item.val];
 					//字符串需要处理
-					if(nodom.isString(value) && value !== ''){
+					if(nodom.isString(value)){
 						value = nodom.addStrQuot(value);
 					}
 					retStr += value;
@@ -381,9 +380,7 @@ class Expression{
 						retStr += value;
 					} 
 			}
-			
 		});
-
 		if(needEval){
 			try{
 				retStr = eval(retStr);	
@@ -392,6 +389,10 @@ class Expression{
 			}
 		}else if(nodom.isString(retStr) && retStr.charAt(0) === '"'){ //字符串去掉两边的"
 			retStr = retStr.substring(1,retStr.length-1);
+		}
+		//替换所有undefined为空
+		if(retStr === undefined){
+			retStr = '';
 		}
 		return retStr;
 	}
@@ -420,12 +421,12 @@ class Expression{
 			model = module.model;
 		}
 		if(!model){
-			return '';
+			return undefined;
 		}
 		let v = model.query(field);
 		if(v === undefined && model !== module.model){
 			v = module.model.query(field);
 		}
-		return v===undefined?'':v;
+		return v;
 	}
 }

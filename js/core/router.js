@@ -28,6 +28,7 @@ class Router{
 			}
 		}
 		me.waitList.push(path);
+		
 		me.load();
 	}
 
@@ -54,6 +55,7 @@ class Router{
 	static start(path){
 		const me = this;
 		let diff = me.compare(me.currentPath,path);
+		
 		//获得当前模块，用于寻找router view
 		let parentModule = diff[0] === null?ModuleFactory.getMain():ModuleFactory.get(diff[0].module);
 		//onleave事件，从末往前执行
@@ -75,10 +77,9 @@ class Router{
 
 		let operArr = [];  	//待操作函数数组
 		let paramArr = []; 	//函数对应参数数组
-		let showPath = '';  //实际要显示的路径
-
-		//设置active
+		let showPath;  //实际要显示的路径
 		
+		//设置active
 		if(diff[2].length === 0){ //路由相同，参数不同
 			if(diff[0] !== null){
 				setRouteParamToModel(diff[0]);
@@ -86,8 +87,8 @@ class Router{
 				if(!diff[0].useParentPath){
 					showPath = diff[0].fullPath; 
 				}
+				diff[0].setLinkActive(true);
 			}
-			diff[0].setLinkActive(true);
 		}else{ //路由不同
 			//加载模块
 			for(let i=0;i<diff[2].length;i++){
@@ -96,11 +97,11 @@ class Router{
 				if(!route || !route.module){
 					continue;
 				}
-
+				
 				if(!route.useParentPath){
 					showPath = route.fullPath; 
 				}
-
+				
 				if(!parentModule.routerKey){
 					throw Error.handle('notexist',nodom.words.routeView);
 				}
@@ -149,9 +150,14 @@ class Router{
 				);
 			}
 		}
+		if(!showPath){
+			if(!me.getRoute(path)){
+				throw Error.handle('notexist1',nodom.words.route,path);
+			}
+		}
 
 		//如果是history popstate，则不加入history
-		if(me.startStyle !== 2 && showPath !== ''){ 
+		if(me.startStyle !== 2 && showPath){ 
 			//子路由，替换state
 			if(me.showPath && showPath.indexOf(me.showPath) === 0){
 				history.replaceState(path,'', nodom.config.routerPrePath + showPath);	
@@ -161,12 +167,13 @@ class Router{
 			//设置显示路径
 			me.showPath = showPath;
 		}
-		//待处理模块链为空，不需要处理
+		
 		if(operArr.length === 0){
 			Router.loading = false;
 			Router.startStyle = 0;
 			return;
 		}
+		
 		//修改currentPath
 		me.currentPath = path;
 		
@@ -175,6 +182,8 @@ class Router{
 			Router.loading = false;
 			me.load();
 			Router.startStyle = 0;
+		}).catch((e)=>{
+			throw e;
 		});
 
 		/**
@@ -210,11 +219,17 @@ class Router{
 		this.addPath(path);
 	}
 	
+	/**
+	 * 添加路由
+	 * @param {object} route 	路由配置 
+	 * @param {object} parent 	父路由 
+	 */
 	static addRoute(route,parent){
 		//加入router tree
 		if(RouterTree.add(route,parent) === false){
 			throw Error.handle("exist1",nodom.words.route,route.path);
 		}
+		
 		//加入map
 		this.routes.set(route.id,route);
 	}
@@ -233,7 +248,6 @@ class Router{
 		if(routes === null || routes.length === 0){
 			return null;
 		}
-				
 		//routeid 转route
 		if(last){   //获取最后一个
 			return routes[routes.length-1];
@@ -335,7 +349,8 @@ class Router{
 			if(!dom){
 				return;
 			}
-			
+			// dom route 路径
+			let domPath = dom.props['path'];
 			if(dom.exprProps.hasOwnProperty('active')){ // active属性为表达式，修改字段值
 				let model = module.modelFactory.get(dom.modelId);
 				if(!model){
@@ -347,15 +362,15 @@ class Router{
 					return;
 				}
 				let field = expr.fields[0];
-				//路径相同则设置active 为true，否则为false
-				if(path.indexOf(dom.props['path']) === 0){
+				//路径相同或参数路由路径前部分相同则设置active 为true，否则为false
+				if(path === domPath || path.indexOf(domPath+'/') === 0){
 					model.data[field] = true;
 				}else{
 					model.data[field] = false;
 				}
 			}else if(dom.props.hasOwnProperty('active')){  //active值属性
-				//路径相同则设置active 为true，否则为false
-				if(path.indexOf(dom.props['path']) === 0){
+				//路径相同或参数路由路径前部分相同则设置active 为true，否则为false
+				if(path === domPath || path.indexOf(domPath+'/') === 0){
 					dom.props['active'] = true;
 				}else{
 					dom.props['active'] = false;
@@ -439,7 +454,6 @@ class RouterTree {
      * @return 添加是否成功 type Boolean
      */
     static add(route,parent) {
-
     	const me = this;
     	//创建根节点
     	if(!me.root){
@@ -447,11 +461,9 @@ class RouterTree {
     	}
         let pathArr = route.path.split('/');
         let node = parent||me.root;
-        let path = '';
         let param = [];
-        let routeValue; 		//记录最后一个非参数路径
         let paramIndex = -1;	//最后一个参数开始
-        let prePath = '';
+        let prePath = '';		//前置路径
         for(let i=0;i<pathArr.length;i++){
         	let v = pathArr[i].trim();
         	if(v === ''){
@@ -499,8 +511,8 @@ class RouterTree {
     	if(node !== undefined && node !== route){
     		route.path = prePath;
         	node.children.push(route);	
-    	}
-        return true;
+		}
+		return true;
     }
 	
 	/**
@@ -522,14 +534,12 @@ class RouterTree {
     	for(let i=0;i<pathArr.length;i++){
     		let v = pathArr[i].trim();
         	if(v === ''){
-        		pathArr.splice(i--,1);
         		continue;
         	}
         	let find = false;
         	for(let j=0;j<node.children.length;j++){
         		if(node.children[j].path === v){
         			//设置完整路径
-
         			if(preNode !== me.root){
         				preNode.fullPath = fullPath;
         				preNode.data = node.data;
@@ -552,15 +562,15 @@ class RouterTree {
         		if(paramIndex < node.params.length){ //超出参数长度的废弃
         			node.data[node.params[paramIndex++]] = v;	
         		}
-        	}
-        }
+			}
+	    }
 
         //最后一个节点
         if(node !== me.root){
         	node.fullPath = fullPath;
         	retArr.push(node);
-        }
-        return retArr;
+		}
+		return retArr;
     }
 }
 
@@ -574,7 +584,6 @@ window.addEventListener('popstate' , function(e){
 	}
 	Router.startStyle = 2;
 	Router.addPath(state);
-	// Router.start(state);
 });
 
 

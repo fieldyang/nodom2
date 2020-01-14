@@ -68,7 +68,6 @@ class Element{
 		let el,el1;
 		let type = params.type;
 		let parent = params.parent;
-		let modelFac = module.modelFactory;
 		//构建el
 		if(!parent){
 			el = module.container;
@@ -79,7 +78,7 @@ class Element{
 				el = module.container.querySelector("[key='"+ me.key +"']");
 			}	
 		}
-
+		// console.log(el);
 		if(!el){
 			return;
 		}
